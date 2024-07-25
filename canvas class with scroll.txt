@@ -1,0 +1,24 @@
+class Window:
+	def __init__(self, master):
+		self.master = master
+		self.frame = tk.Frame(self.master)
+		self.frame.pack()
+
+		self.scrollbary = tk.Scrollbar(self.frame,
+			orient=tk.VERTICAL)
+		self.scrollbary.pack(side=tk.RIGHT,
+		                     fill=tk.Y)
+
+		self.canvas = tk.Canvas(self.frame,
+					width=300
+					height=300,
+					bg="white"
+					scrollregion=(0,0,500,500),
+                    yscrollcommand = self.scrollbary.set)
+		self.canvas.pack()
+
+		self.scrollbary.config(command=self.canvas.yview)
+
+		img = tk.PhotoImage(file="myimage.png")
+		self.master.img = img
+		self.canvas.create_image(200, 200, image=img)
