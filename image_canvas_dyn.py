@@ -53,7 +53,7 @@ lab = ttk.Label(root, text="resizable image in a canvas",
                 style="MyLabel.TLabel")
 lab.pack(pady=my_pady)
 
-image_path = "images/buck rogers_39_e.png"
+image_path = "images/parapsycho_1.png"
 im1 = Image.open(image_path)
 
 canv_dyn1 = tk.Canvas(root,

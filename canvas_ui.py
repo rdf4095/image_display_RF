@@ -8,7 +8,8 @@ author: Russell Folks
 history:
 -------
 03-04-2024  creation
-03-14-2024  Add a section for utility functions
+03-14-2024  Add a section for utility functions.
+07-28-2024  Update function docstrings.
 """
 from PIL import ImageTk
 import tkinter as tk
@@ -53,30 +54,38 @@ def get_posn(vp: dict,
     imp3 = Posn(0, 0)
     imp4 = Posn(0, 0)
 
-    match hjust:
-        case 'left':
-            imp1.x, imp3.x = 0, 0
-            imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
-        case 'center':
-            imp1.x = vp['w'] - (widths[0])
-            imp3.x = vp['w'] - (widths[2])
-            imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
-
+    print('vertical:')
     match vjust:
         case 'top':
+            print('    top')
             imp1.y, imp2.y = 0, 0
             imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
         case 'bottom':
+            print('    bottom')
             imp1.y = vp['h'] - heights[0]
             imp2.y = vp['h'] - heights[1]
-            imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
+            # imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
+            imp3.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[2])
+            imp4.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[3])
+
+    print('horizontal:')
+    match hjust:
+        case 'left':
+            print('left')
+            imp1.x, imp3.x = 0, 0
+            imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
+        case 'center':
+            print('    center')
+            imp1.x = vp['w'] - (widths[0])
+            imp3.x = vp['w'] - (widths[2])
+            imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
 
     return [imp1, imp2, imp3, imp4]
 
 
 def init_image_size(im: object,
                     vp: dict) -> dict:
-    
+    """Set image display size and shape, based on the defined viewport size."""
     vp_ratio = vp['w'] / vp['h']
     im_ratio = im.width / im.height
 
@@ -93,12 +102,9 @@ def resize_images(ev: tk.Event,
                   im: object,
                   vp: dict,
                   canv: object) -> None:
-    """Display image in a resizable canvas."""
-
+    """Create image object for display at a calculated size."""
     global im_tk_new1 
     params1 = calc_resize(ev, im)
-
-    # print(f'in resize_images, w,h: {canv.winfo_width()}, {canv.winfo_height()}')
 
     im_tk_new1 = ImageTk.PhotoImage(params1['im_resize_new'])
     canv.create_image(0, 0,
@@ -108,8 +114,7 @@ def resize_images(ev: tk.Event,
 
 def calc_resize(ev: tk.Event,
                 imobj: object) -> object:
-    """Calculate new size for image in a resizable canvas."""
-
+    """Calculate new size for a dynamically resizable canvas."""
     this_canv = ev.widget
     canv_width = ev.width
     canv_height = ev.height
