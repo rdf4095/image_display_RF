@@ -15,7 +15,7 @@ history:
 """
 TODO: - add top level frame for UI.
       - ...calculate window geometry based on top level frame.
-      - fix image arrangement options 2-4 (left-top works.)
+      - move the logic for re-configuring canvas size to image_canvas_dyn.py.
 """
 
 from PIL import Image, ImageTk
@@ -33,17 +33,32 @@ def reset_window_size(dims: str) -> None:
 
 def set_top_left():
     print('in set_top_left')
+    posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
+    canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
+    canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
+    canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
+    canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
 
 
 def set_top_center():
     print('in set_top_center')
+    posn = cnv.get_posn(viewport1, heights, widths, 'center', 'top')
+    canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
+    canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
+    canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
+    canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
 
 
 def set_bottom_left():
     print('in set_bottom_left')
+    posn = cnv.get_posn(viewport1, heights, widths, 'left', 'bottom')
+    canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
+    canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
+    canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
+    canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
 
 
-def set_bottom_center():
+def set_bottom_center_ORIG():
     print('in set_bottom_center')
     posn = cnv.get_posn(viewport1, heights, widths, 'center', 'bottom')
     print()
@@ -53,13 +68,45 @@ def set_bottom_center():
     print(f"  im 2: {posn[2].x}, {posn[2].y}")
     print(f"  im 3: {posn[3].x}, {posn[3].y}")
     print()
-    print(f'id of im 1: {id(imid_list[0])}')
-    print(f'config of im 1: {canv_static1.itemconfigure(imid_list[0])}')
+    
+    # move images
 
-    # im1 = canv_static1.itemcget(imid_list[0])
-    # print(im1)
+    # method 1: move objects using canvas methods
+    # --------
+    # relative
+    # canv_static1.move(id1, 25, 0)
 
-    # print(f'x,y of im 1: {id(imid_list[0])}')
+    # absolute
+    # canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
+    # canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
+    # canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
+    # canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
+    canv_static1.moveto(1, posn[0].x, posn[0].y)
+    canv_static1.moveto(2, posn[1].x, posn[1].y)
+    canv_static1.moveto(3, posn[2].x, posn[2].y)
+    canv_static1.moveto(4, posn[3].x, posn[3].y)
+
+    # method 2: recreate the entire canvas
+    # --------
+    # for j in imid_list:
+    #     canv_static1.delete(j)
+
+    # imid_list.clear()
+
+    # for i, n in enumerate(image_paths):
+    #     tagname = "tag_im" + str(i)
+    #     imid = canv_static1.create_image(posn[i].x, posn[i].y, anchor=tk.NW, image=myPhotoImages[i],
+    #                                 tag = tagname)
+    #     imid_list.append(imid)
+
+
+def set_all_posn(vert, horiz):
+    posn = cnv.get_posn(viewport1, heights, widths, horiz, vert)
+    
+    canv_static1.moveto(1, posn[0].x, posn[0].y)
+    canv_static1.moveto(2, posn[1].x, posn[1].y)
+    canv_static1.moveto(3, posn[2].x, posn[2].y)
+    canv_static1.moveto(4, posn[3].x, posn[3].y)
 
 
 # app window
@@ -77,8 +124,6 @@ viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
 # viewport1 = {'w': 400, 'h': 300, 'gutter': 10}
 my_pady = 10
 
-# canvas_reconfig = {'w': viewport1['w'] * 2 + viewport1['gutter'],
-#                    'h': viewport1['h']}
 canvas_reconfig = {'w': viewport1['w'] * 2 + viewport1['gutter'],
                    'h': viewport1['h'] * 2 + viewport1['gutter']}
 # print(f'starting config w,h: {canvas_reconfig["w"]}, {canvas_reconfig["h"]}')
@@ -108,8 +153,9 @@ for i, n in enumerate(image_paths):
     # print(f"im {i} ({n}), {widths[i]}, {heights[i]}")
 
 canv_static1 = tk.Canvas(root, background="green")
-
-# print(f'canv_static1 id: {id(canv_static1)}')
+# if images are smaller than the vp, might have to do the configure after
+# ims are displayed.
+canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
 
 posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
 # print()
@@ -141,33 +187,32 @@ canv_static1.update()
 # print()
 # print(f"static canv reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h']}")
 
-canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
-# canv_static1.configure(width=410, height=310)
+# canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
 
 # other UI elements ----------
 button_fr_1 = ttk.Frame(root, relief='groove')
 
 but_top_left = ttk.Button(button_fr_1,
                           text='top-left',
-                          command=set_top_left,
+                          command=lambda v='top', h='left': set_all_posn(v, h),
                           style="MyButton1.TButton")
 but_top_left.pack(side='left', padx=5, pady=5)
 
 but_top_center = ttk.Button(button_fr_1,
                            text='top-center',
-                           command=set_top_center,
+                           command=lambda v='top', h='center': set_all_posn(v, h),
                            style="MyButton1.TButton")
 but_top_center.pack(side='left', padx=5, pady=5)
 
 but_bottom_left = ttk.Button(button_fr_1,
                              text='bottom-left',
-                             command=set_bottom_left,
+                             command=lambda v='bottom', h='left': set_all_posn(v, h),
                              style="MyButton1.TButton")
 but_bottom_left.pack(side='left', padx=5, pady=5)
 
 but_bottom_center = ttk.Button(button_fr_1,
                               text='bottom-center',
-                              command=set_bottom_center,
+                              command=lambda v='bottom', h='center': set_all_posn(v, h),
                               style="MyButton1.TButton")
 but_bottom_center.pack(side='left', padx=5, pady=5)
 

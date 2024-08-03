@@ -64,7 +64,8 @@ canv_dyn1 = tk.Canvas(root,
 
 print(f'viewport h, w: {viewport["h"]}, {viewport["w"]}')
 
-canv_dyn1.bind('<Configure>', lambda ev, im=im1, vp=viewport, canv=canv_dyn1: cnv.resize_images(ev, im, vp, canv))
+# canv_dyn1.bind('<Configure>', lambda ev, im=im1, vp=viewport, canv=canv_dyn1: cnv.resize_images(ev, im, vp, canv))
+canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
 canv_dyn1.pack(fill='both', expand=True)
 
 

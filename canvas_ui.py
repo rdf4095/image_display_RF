@@ -3,6 +3,14 @@ module: canvas_ui.py
 
 purpose: types and functions for canvas to contain images.
 
+comments: To display images at their native size(s) when img dimensions
+          are smaller than both the viewport height and width, a new routine 
+          should be written, to replace compare_ratios.
+          Alternatively, init_image_size wouldn't be needed in the calling
+          module; native sizes would be used directly. That approach is not
+          transparent to the caller however.
+          Note: this hasn't been tested.
+
 author: Russell Folks
 
 history:
@@ -10,14 +18,19 @@ history:
 03-04-2024  creation
 03-14-2024  Add a section for utility functions.
 07-28-2024  Update function docstrings.
+08-03-2024  Added comments section to module header.
 """
 from PIL import ImageTk
 import tkinter as tk
 
-# -------------
+# -------
 # utility
-# -------------
+# -------
 def compare_ratios(vp, im, w, h):
+    """Set new image height and/or width based on viewport shape.
+
+    Images will be scaled up or down to match viewport height or width.
+    """
     if vp > im:
         ht_new = h
         wid_new = int(ht_new * im)
@@ -29,7 +42,7 @@ def compare_ratios(vp, im, w, h):
 
 
 # -------------
-# static canvas: images are fixed size
+# static canvas: canvas and conatained images are fixed size
 # -------------
 def Posn_init(self, x: int, y: int):
     self.x = x
@@ -54,28 +67,28 @@ def get_posn(vp: dict,
     imp3 = Posn(0, 0)
     imp4 = Posn(0, 0)
 
-    print('vertical:')
+    # print('vertical:')
     match vjust:
         case 'top':
-            print('    top')
+            # print('    top')
             imp1.y, imp2.y = 0, 0
             imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
         case 'bottom':
-            print('    bottom')
+            # print('    bottom')
             imp1.y = vp['h'] - heights[0]
             imp2.y = vp['h'] - heights[1]
             # imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
             imp3.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[2])
             imp4.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[3])
 
-    print('horizontal:')
+    # print('horizontal:')
     match hjust:
         case 'left':
-            print('left')
+            # print('left')
             imp1.x, imp3.x = 0, 0
             imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
         case 'center':
-            print('    center')
+            # print('    center')
             imp1.x = vp['w'] - (widths[0])
             imp3.x = vp['w'] - (widths[2])
             imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
@@ -100,7 +113,7 @@ def init_image_size(im: object,
 # --------------
 def resize_images(ev: tk.Event,
                   im: object,
-                  vp: dict,
+                #   vp: dict,
                   canv: object) -> None:
     """Create image object for display at a calculated size."""
     global im_tk_new1 
