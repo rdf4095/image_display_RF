@@ -5,10 +5,6 @@ purpose: Display an image in a canvas, and allow resizing
          as window dimensions change.
 
 comments: based on image_disp_ncanvas.py
-kb shortcuts:
-    command-L                  - select whole line
-    command-D                  - select next instance of selection (to edit both)
-    command-SHIFT-ENTER        - create new line and position curson on it
 
 author: Russell Folks
 
@@ -19,8 +15,10 @@ history:
 02-21-2024  Use type-hinting in function signatures.
 02-21-2024  Structure the code like image_disp_1canvas.py (non-resizable canvas).
 """
-# TODO: could add frame below the canvas, for other widgets,
-#       so the root geometry can be calculated accurately.
+"""
+TODO: - could add frame below the canvas, for other widgets,
+        so the root geometry can be calculated accurately.
+"""
 
 from PIL import Image
 import tkinter as tk

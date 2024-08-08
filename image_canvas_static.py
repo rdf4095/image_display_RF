@@ -11,11 +11,13 @@ history:
 -------
 07-24-2024  creation
 07-30-2024  Add buttons to change image placement.
+08-03-2024  Combine image-move functions into one fxn.
+08-06-2024  Calculate the window geometry needed after images are displayed, and
+            use this to control window minimum and reset.
+08-08-2024  Test canvas: actual size is slightly larger than configured size.
 """
 """
-TODO: - add top level frame for UI.
-      - ...calculate window geometry based on top level frame.
-      - move the logic for re-configuring canvas size to image_canvas_dyn.py.
+TODO: - copy the logic for re-configuring canvas size to image_canvas_dyn.py.
 """
 
 from PIL import Image, ImageTk
@@ -110,11 +112,11 @@ def set_all_posn(vert, horiz):
 
 
 # app window
-default_dims = "520x550"
+default_dims = ""
 
 root = tk.Tk()
-root.geometry (default_dims)
-root.minsize(520, 550)
+# root.geometry (default_dims)
+# root.minsize(520, 550)
 root.resizable(1, 1)
 root.title("image, ttk, pack")
 
@@ -133,9 +135,13 @@ lab = ttk.Label(root, text="up to 4 fixed-size images",
 lab.pack(pady=my_pady)
 
 image_paths = ['four moods_1.png',
-                'forest of death_1.png',
-                'four moods_2.png',
-                'parapsycho_1.png']
+               'forest of death_1.png',
+               'four moods_2.png',
+               'parapsycho_1.png']
+# image_paths = ['four moods_2.png',
+#                'forest of death_1.png',
+#                'four moods_2.png',
+#                'forest of death_1.png']
 myPhotoImages = []
 heights = []
 widths = []
@@ -150,12 +156,12 @@ for i, n in enumerate(image_paths):
     im_resize = im.resize((imsize['w'], imsize['h']))
     im_tk = ImageTk.PhotoImage(im_resize)
     myPhotoImages.append(im_tk)
-    # print(f"im {i} ({n}), {widths[i]}, {heights[i]}")
+    print(f"im {i} ({n}), {widths[i]}, {heights[i]}")
 
 canv_static1 = tk.Canvas(root, background="green")
-# if images are smaller than the vp, might have to do the configure after
-# ims are displayed.
-canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
+
+canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
+                       borderwidth=0)
 
 posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
 # print()
@@ -172,10 +178,21 @@ for i, n in enumerate(image_paths):
                                   tag = tagname)
     imid_list.append(imid)
 
-canv_static1.pack(pady=10)
+canv_static1.pack(ipadx=0, ipady=0, pady=10)
 canv_static1.update()
+# print(f'canv conf w,h: {canv_static1["width"]}, {canv_static1["height"]}')
+# print(f'canv  req w,h: {canv_static1.winfo_reqwidth()}, {canv_static1.winfo_reqheight()}')
+# print(f'canv      w,h: {canv_static1.winfo_width()}, {canv_static1.winfo_height()}')
 
 # Scale the canvas to hold the images with no extra space.
+# In the future, we may handle images in these additional situations:
+#   1) all imgs smaller than the viewport width, with no re-scaling
+#   2) all imgs smaller than the viewport height, with no re-scaling
+#   3) after re-scaling, img widths or heights smaller than corresponding
+#      canvas dimension.
+# In all 3 cases, remove "extra" canvas width or height. The purpose is to allow
+# other objects to be positioned closer to the canvas.
+
 # canvas_config_ht = max(sum(heights[0::2]), sum(heights[1::2])) + viewport['gutter']
 # print(f'final gutter: {viewport1["gutter"]}')
 # canvas_reconfig['h'] = max(sum(heights[0::2]) + viewport1['gutter'],
@@ -189,8 +206,10 @@ canv_static1.update()
 
 # canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
 
-# other UI elements ----------
-button_fr_1 = ttk.Frame(root, relief='groove')
+# UI elements ----------
+ui_fr = ttk.Frame(root, relief='groove')
+
+button_fr_1 = ttk.Frame(ui_fr, relief='raised')
 
 but_top_left = ttk.Button(button_fr_1,
                           text='top-left',
@@ -223,20 +242,33 @@ button_fr_1.update()
 # print(f'button_fr_1 geometry: {button_fr_1.winfo_geometry()}')
 # print(f'button_fr_1 w,h: {button_fr_1.winfo_width()}, {button_fr_1.winfo_height()}')
 
-but_reset_size = ttk.Button(root,
+but_reset_size = ttk.Button(ui_fr,
                             text="reset window size",
                             command=lambda dims=default_dims: reset_window_size(dims),
                             style="MyButton1.TButton")
 but_reset_size.pack(side='top', padx=5, pady=10)
 
 
-
 # or: command=root.destroy
-btnq = ttk.Button(root,
+btnq = ttk.Button(ui_fr,
                   text="Quit",
                   command=root.quit,
                   style="MyButton1.TButton")
-btnq.pack(side="top", fill='x', padx=10)
+btnq.pack(side="top", fill='x', padx=5, pady=5)
+
+ui_fr.pack(side='top', padx=5, pady=5)
+ui_fr.update()
+
+# print(f'canv_static1 h,w: {canv_static1.winfo_height()}, {canv_static1.winfo_width()}')
+# print(f'ui_fr h,w: {ui_fr.winfo_height()}, {ui_fr.winfo_width()}')
+# print(f'lab h,w: {lab.winfo_height()}, {lab.winfo_width()}')
+
+total_ht = lab.winfo_height() + canv_static1.winfo_height() + ui_fr.winfo_height() + 50
+total_wd = max(lab.winfo_width(), canv_static1.winfo_width(), ui_fr.winfo_width())
+default_dims = f'{total_wd}x{total_ht}'
+# print(f'total_wd, total_ht: {total_wd}, {total_ht}')
+root.minsize(total_wd, total_ht)
+
 
 if __name__ == "__main__":
     root.mainloop()
