@@ -15,9 +15,12 @@ history:
 08-06-2024  Calculate the window geometry needed after images are displayed, and
             use this to control window minimum and reset.
 08-08-2024  Test canvas: actual size is slightly larger than configured size.
+08-14-2024  Add function find_largest_objs to re-order the list of image paths
+            according to image size.
 """
 """
 TODO: - copy the logic for re-configuring canvas size to image_canvas_dyn.py.
+      - test find_largest_objs for list of 3 and list of 2
 """
 
 from PIL import Image, ImageTk
@@ -34,72 +37,10 @@ def reset_window_size(dims: str) -> None:
 
 
 def set_top_left():
+    """Move an image to the top-left of the canvas."""
     print('in set_top_left')
     posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
     canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
-    canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
-    canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
-    canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
-
-
-def set_top_center():
-    print('in set_top_center')
-    posn = cnv.get_posn(viewport1, heights, widths, 'center', 'top')
-    canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
-    canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
-    canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
-    canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
-
-
-def set_bottom_left():
-    print('in set_bottom_left')
-    posn = cnv.get_posn(viewport1, heights, widths, 'left', 'bottom')
-    canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
-    canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
-    canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
-    canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
-
-
-def set_bottom_center_ORIG():
-    print('in set_bottom_center')
-    posn = cnv.get_posn(viewport1, heights, widths, 'center', 'bottom')
-    print()
-    print('new positions of 4 ims:')
-    print(f"  im 0: {posn[0].x}, {posn[0].y}")
-    print(f"  im 1: {posn[1].x}, {posn[1].y}")
-    print(f"  im 2: {posn[2].x}, {posn[2].y}")
-    print(f"  im 3: {posn[3].x}, {posn[3].y}")
-    print()
-    
-    # move images
-
-    # method 1: move objects using canvas methods
-    # --------
-    # relative
-    # canv_static1.move(id1, 25, 0)
-
-    # absolute
-    # canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
-    # canv_static1.moveto(imid_list[1], posn[1].x, posn[1].y)
-    # canv_static1.moveto(imid_list[2], posn[2].x, posn[2].y)
-    # canv_static1.moveto(imid_list[3], posn[3].x, posn[3].y)
-    canv_static1.moveto(1, posn[0].x, posn[0].y)
-    canv_static1.moveto(2, posn[1].x, posn[1].y)
-    canv_static1.moveto(3, posn[2].x, posn[2].y)
-    canv_static1.moveto(4, posn[3].x, posn[3].y)
-
-    # method 2: recreate the entire canvas
-    # --------
-    # for j in imid_list:
-    #     canv_static1.delete(j)
-
-    # imid_list.clear()
-
-    # for i, n in enumerate(image_paths):
-    #     tagname = "tag_im" + str(i)
-    #     imid = canv_static1.create_image(posn[i].x, posn[i].y, anchor=tk.NW, image=myPhotoImages[i],
-    #                                 tag = tagname)
-    #     imid_list.append(imid)
 
 
 def set_all_posn(vert, horiz):
@@ -107,16 +48,50 @@ def set_all_posn(vert, horiz):
     
     canv_static1.moveto(1, posn[0].x, posn[0].y)
     canv_static1.moveto(2, posn[1].x, posn[1].y)
-    canv_static1.moveto(3, posn[2].x, posn[2].y)
-    canv_static1.moveto(4, posn[3].x, posn[3].y)
+    if len(heights) > 2:
+        canv_static1.moveto(3, posn[2].x, posn[2].y)
+    if len(heights) > 3:
+        canv_static1.moveto(4, posn[3].x, posn[3].y)
+
+
+def find_largest_objs(dims: list, paths: list) -> list:
+    """Find the 2 images of greatest dimension.
+    
+    dims specifies the dimension, as width or height.
+    This function should only be called if len(dims) > 2.
+    For 1 or 2 images, there's little-to-no choice of display arrangement.
+    """
+    num_items = len(dims)
+    sort_w = sorted(dims)
+    largest_2 = sort_w[num_items - 2:]
+    newpaths = []
+    
+    w1 = dims.index(largest_2[0])
+
+    # Mask the location of the first "large" image, to find the second.
+    dims_mod = dims.copy()
+    dims_mod[w1] = -1
+    w2 = dims_mod.index(largest_2[1])
+
+    indices_all = [*range(len(dims))]
+
+    indices_largest = [w1, w2]
+
+    indices_smallest = [n for n in indices_all if n not in indices_largest]
+
+    newpaths = [paths[w1], paths[w2]]
+    newpaths.insert(1, paths[indices_smallest[0]])
+    print(f'num_items: {num_items}')
+    if num_items > 3:
+        newpaths.insert(2, paths[indices_smallest[1]])
+
+    return newpaths
 
 
 # app window
 default_dims = ""
 
 root = tk.Tk()
-# root.geometry (default_dims)
-# root.minsize(520, 550)
 root.resizable(1, 1)
 root.title("image, ttk, pack")
 
@@ -128,26 +103,79 @@ my_pady = 10
 
 canvas_reconfig = {'w': viewport1['w'] * 2 + viewport1['gutter'],
                    'h': viewport1['h'] * 2 + viewport1['gutter']}
-# print(f'starting config w,h: {canvas_reconfig["w"]}, {canvas_reconfig["h"]}')
 
 lab = ttk.Label(root, text="up to 4 fixed-size images",
                 style="MyLabel.TLabel")
 lab.pack(pady=my_pady)
 
-image_paths = ['four moods_1.png',
-               'forest of death_1.png',
-               'four moods_2.png',
-               'parapsycho_1.png']
 # image_paths = ['four moods_2.png',
 #                'forest of death_1.png',
-#                'four moods_2.png',
-#                'forest of death_1.png']
+#                'parapsycho_1.png',
+#                'four moods_1.png',
+#                ]
+image_paths = ['forest of death_1.png',
+               'parapsycho_1.png',
+               'four moods_1.png',
+               ]
+"""
+image_paths = ['four moods_2.png',      tall
+               'forest of death_1.png', tall
+               'parapsycho_1.png',      wide
+               'four moods_1.png',      wide
+               ]
+"""
 myPhotoImages = []
 heights = []
 widths = []
 
 # print('static images, native w,h and resized w,h:')
+# print(f'starting path list: {image_paths}')
+# print()
+# print('sizes of 4 ims:')
+
 for i, n in enumerate(image_paths):
+    im_path = 'images/' + n
+    im = Image.open(im_path)
+    imsize = cnv.init_image_size(im, viewport1)
+    heights.append(imsize['h'])
+    widths.append(imsize['w'])
+#     im_resize = im.resize((imsize['w'], imsize['h']))
+#     im_tk = ImageTk.PhotoImage(im_resize)
+#     myPhotoImages.append(im_tk)
+#     print(f"  im {i} ({n}), {widths[i]}, {heights[i]}")
+# for i, n in enumerate(image_paths):
+#     im_path = 'images/' + n
+#     im = Image.open(im_path)
+#     imsize = cnv.init_image_size(im, viewport1)
+    # heights.append(imsize['h'])
+    # widths.append(imsize['w'])
+
+    # im_resize = im.resize((imsize['w'], imsize['h']))
+    # im_tk = ImageTk.PhotoImage(im_resize)
+    # myPhotoImages.append(im_tk)
+    # print(f"  im {i} ({n}), {widths[i]}, {heights[i]}")
+
+"""
+re-order the images to position them for display according to this logic:
+display order:
+im_0  im_1
+im_2  im_3
+
+using widths, shapes:
+-- |
+|  --
+
+using heights, shapes:
+|  --
+-- |  
+"""
+new_image_paths = find_largest_objs(widths, image_paths)
+print(f'reordered path list: {new_image_paths}')
+
+heights = []
+widths = []
+
+for i, n in enumerate(new_image_paths):
     im_path = 'images/' + n
     im = Image.open(im_path)
     imsize = cnv.init_image_size(im, viewport1)
@@ -156,23 +184,26 @@ for i, n in enumerate(image_paths):
     im_resize = im.resize((imsize['w'], imsize['h']))
     im_tk = ImageTk.PhotoImage(im_resize)
     myPhotoImages.append(im_tk)
-    print(f"im {i} ({n}), {widths[i]}, {heights[i]}")
+    # print(f"  im {i} ({n}), {widths[i]}, {heights[i]}")
+
+
+
 
 canv_static1 = tk.Canvas(root, background="green")
-
 canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
                        borderwidth=0)
 
 posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
 # print()
-print('positions of 4 ims:')
-print(f"  im 0: {posn[0].x}, {posn[0].y}")
-print(f"  im 1: {posn[1].x}, {posn[1].y}")
-print(f"  im 2: {posn[2].x}, {posn[2].y}")
-print(f"  im 3: {posn[3].x}, {posn[3].y}")
+# print('positions of 4 ims:')
+# print(f"  im 0: {posn[0].x}, {posn[0].y}")
+# print(f"  im 1: {posn[1].x}, {posn[1].y}")
+# print(f"  im 2: {posn[2].x}, {posn[2].y}")
+# print(f"  im 3: {posn[3].x}, {posn[3].y}")
 
 imid_list = []
-for i, n in enumerate(image_paths):
+# for i, n in enumerate(image_paths):
+for i, n in enumerate(new_image_paths):
     tagname = "tag_im" + str(i)
     imid = canv_static1.create_image(posn[i].x, posn[i].y, anchor=tk.NW, image=myPhotoImages[i],
                                   tag = tagname)
@@ -185,10 +216,10 @@ canv_static1.update()
 # print(f'canv      w,h: {canv_static1.winfo_width()}, {canv_static1.winfo_height()}')
 
 # Scale the canvas to hold the images with no extra space.
-# In the future, we may handle images in these additional situations:
+# This is to handle future situations like:
 #   1) all imgs smaller than the viewport width, with no re-scaling
 #   2) all imgs smaller than the viewport height, with no re-scaling
-#   3) after re-scaling, img widths or heights smaller than corresponding
+#   3) after re-scaling, all img widths or heights smaller than corresponding
 #      canvas dimension.
 # In all 3 cases, remove "extra" canvas width or height. The purpose is to allow
 # other objects to be positioned closer to the canvas.
@@ -223,6 +254,12 @@ but_top_center = ttk.Button(button_fr_1,
                            style="MyButton1.TButton")
 but_top_center.pack(side='left', padx=5, pady=5)
 
+but_top_right = ttk.Button(button_fr_1,
+                           text='top-right',
+                           command=lambda v='top', h='right': set_all_posn(v, h),
+                           style="MyButton1.TButton")
+but_top_right.pack(side='left', padx=5, pady=5)
+
 but_bottom_left = ttk.Button(button_fr_1,
                              text='bottom-left',
                              command=lambda v='bottom', h='left': set_all_posn(v, h),
@@ -234,6 +271,12 @@ but_bottom_center = ttk.Button(button_fr_1,
                               command=lambda v='bottom', h='center': set_all_posn(v, h),
                               style="MyButton1.TButton")
 but_bottom_center.pack(side='left', padx=5, pady=5)
+
+but_bottom_right = ttk.Button(button_fr_1,
+                             text='bottom-right',
+                             command=lambda v='bottom', h='right': set_all_posn(v, h),
+                             style="MyButton1.TButton")
+but_bottom_right.pack(side='right', padx=5, pady=5)
 
 button_fr_1.pack(side='top')
 

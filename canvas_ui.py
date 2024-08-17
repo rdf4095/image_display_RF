@@ -19,6 +19,7 @@ history:
 03-14-2024  Add a section for utility functions.
 07-28-2024  Update function docstrings.
 08-03-2024  Added comments section to module header.
+08-16-2024  Edit get_posn to handle 2 or 3 images.
 """
 from PIL import ImageTk
 import tkinter as tk
@@ -42,13 +43,14 @@ def compare_ratios(vp, im, w, h):
 
 
 # -------------
-# static canvas: canvas and conatained images are fixed size
+# static canvas: canvas and conatained objects are fixed size
 # -------------
 def Posn_init(self, x: int, y: int):
     self.x = x
     self.y = y
 
 Posn = type('Posn', (), {"__init__": Posn_init})
+
 
 def get_posn(vp: dict,
              heights: list,
@@ -67,19 +69,26 @@ def get_posn(vp: dict,
     imp3 = Posn(0, 0)
     imp4 = Posn(0, 0)
 
+    num_items = len(heights)
+
     # print('vertical:')
     match vjust:
         case 'top':
             # print('    top')
             imp1.y, imp2.y = 0, 0
             imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
+        case 'center':
+            # print('    v center')
+            # (vp ht - im ht) / 2
+            pass
         case 'bottom':
             # print('    bottom')
             imp1.y = vp['h'] - heights[0]
             imp2.y = vp['h'] - heights[1]
-            # imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
-            imp3.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[2])
-            imp4.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[3])
+            if num_items > 2:
+                imp3.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[2])
+                if num_items > 3:
+                    imp4.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[3])
 
     # print('horizontal:')
     match hjust:
@@ -88,10 +97,17 @@ def get_posn(vp: dict,
             imp1.x, imp3.x = 0, 0
             imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
         case 'center':
-            # print('    center')
+            # print('    h center')
             imp1.x = vp['w'] - (widths[0])
-            imp3.x = vp['w'] - (widths[2])
-            imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
+            imp2.x = vp['w'] + vp['gutter']
+            if num_items > 2:
+                imp3.x = vp['w'] - (widths[2])
+                if num_items > 3:
+                    imp4.x = vp['w'] + vp['gutter']
+        case 'right':
+            # print('    right')
+            # vp wd - im wd
+            pass
 
     return [imp1, imp2, imp3, imp4]
 
@@ -109,7 +125,7 @@ def init_image_size(im: object,
 
 
 # --------------
-# dynamic canvas: canvas and contained images can be resized.
+# dynamic canvas: canvas and contained objects can be resized.
 # --------------
 def resize_images(ev: tk.Event,
                   im: object,
