@@ -17,10 +17,10 @@ history:
 08-08-2024  Test canvas: actual size is slightly larger than configured size.
 08-14-2024  Add function find_largest_objs to re-order the list of image paths
             according to image size.
+08-21-2024  Handle list of 2 images.
 """
 """
 TODO: - copy the logic for re-configuring canvas size to image_canvas_dyn.py.
-      - test find_largest_objs for list of 3 and list of 2
 """
 
 from PIL import Image, ImageTk
@@ -31,6 +31,7 @@ from importlib.machinery import SourceFileLoader
 import canvas_ui as cnv
 
 styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
+custui = SourceFileLoader("custui", "../../development/python/pandas_02/rf_custom_ui.py").load_module()
 
 def reset_window_size(dims: str) -> None:
     root.geometry(dims)
@@ -80,12 +81,19 @@ def find_largest_objs(dims: list, paths: list) -> list:
     indices_smallest = [n for n in indices_all if n not in indices_largest]
 
     newpaths = [paths[w1], paths[w2]]
-    newpaths.insert(1, paths[indices_smallest[0]])
-    print(f'num_items: {num_items}')
-    if num_items > 3:
-        newpaths.insert(2, paths[indices_smallest[1]])
+    if num_items >= 3:
+        newpaths.insert(1, paths[indices_smallest[0]])
+        if num_items >= 4:
+            newpaths.insert(2, paths[indices_smallest[1]])
 
     return newpaths
+
+
+def align_images():
+    v = vertical_align.get()
+    h = horizontal_align.get()
+    # cnv.get_posn(viewport1, heights, widths, h, v)
+    set_all_posn(v, h)
 
 
 # app window
@@ -108,15 +116,6 @@ lab = ttk.Label(root, text="up to 4 fixed-size images",
                 style="MyLabel.TLabel")
 lab.pack(pady=my_pady)
 
-# image_paths = ['four moods_2.png',
-#                'forest of death_1.png',
-#                'parapsycho_1.png',
-#                'four moods_1.png',
-#                ]
-image_paths = ['forest of death_1.png',
-               'parapsycho_1.png',
-               'four moods_1.png',
-               ]
 """
 image_paths = ['four moods_2.png',      tall
                'forest of death_1.png', tall
@@ -124,6 +123,14 @@ image_paths = ['four moods_2.png',      tall
                'four moods_1.png',      wide
                ]
 """
+# image_paths = ['four moods_2.png',
+#                'forest of death_1.png',
+#                'parapsycho_1.png',
+#                'four moods_1.png',
+#                ]
+image_paths = ['forest of death_1.png',
+               'parapsycho_1.png'
+               ]
 myPhotoImages = []
 heights = []
 widths = []
@@ -139,21 +146,6 @@ for i, n in enumerate(image_paths):
     imsize = cnv.init_image_size(im, viewport1)
     heights.append(imsize['h'])
     widths.append(imsize['w'])
-#     im_resize = im.resize((imsize['w'], imsize['h']))
-#     im_tk = ImageTk.PhotoImage(im_resize)
-#     myPhotoImages.append(im_tk)
-#     print(f"  im {i} ({n}), {widths[i]}, {heights[i]}")
-# for i, n in enumerate(image_paths):
-#     im_path = 'images/' + n
-#     im = Image.open(im_path)
-#     imsize = cnv.init_image_size(im, viewport1)
-    # heights.append(imsize['h'])
-    # widths.append(imsize['w'])
-
-    # im_resize = im.resize((imsize['w'], imsize['h']))
-    # im_tk = ImageTk.PhotoImage(im_resize)
-    # myPhotoImages.append(im_tk)
-    # print(f"  im {i} ({n}), {widths[i]}, {heights[i]}")
 
 """
 re-order the images to position them for display according to this logic:
@@ -186,9 +178,6 @@ for i, n in enumerate(new_image_paths):
     myPhotoImages.append(im_tk)
     # print(f"  im {i} ({n}), {widths[i]}, {heights[i]}")
 
-
-
-
 canv_static1 = tk.Canvas(root, background="green")
 canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
                        borderwidth=0)
@@ -202,7 +191,6 @@ posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
 # print(f"  im 3: {posn[3].x}, {posn[3].y}")
 
 imid_list = []
-# for i, n in enumerate(image_paths):
 for i, n in enumerate(new_image_paths):
     tagname = "tag_im" + str(i)
     imid = canv_static1.create_image(posn[i].x, posn[i].y, anchor=tk.NW, image=myPhotoImages[i],
@@ -240,66 +228,129 @@ canv_static1.update()
 # UI elements ----------
 ui_fr = ttk.Frame(root, relief='groove')
 
-button_fr_1 = ttk.Frame(ui_fr, relief='raised')
+# button_fr_1 = ttk.Frame(ui_fr, relief='raised')
 
-but_top_left = ttk.Button(button_fr_1,
-                          text='top-left',
-                          command=lambda v='top', h='left': set_all_posn(v, h),
-                          style="MyButton1.TButton")
-but_top_left.pack(side='left', padx=5, pady=5)
+# but_top_left = ttk.Button(button_fr_1,
+#                           text='top-left',
+#                           command=lambda v='top', h='left': set_all_posn(v, h),
+#                           style="MyButton1.TButton")
+# but_top_left.pack(side='left', padx=5, pady=5)
 
-but_top_center = ttk.Button(button_fr_1,
-                           text='top-center',
-                           command=lambda v='top', h='center': set_all_posn(v, h),
-                           style="MyButton1.TButton")
-but_top_center.pack(side='left', padx=5, pady=5)
+# but_top_center = ttk.Button(button_fr_1,
+#                            text='top-center',
+#                            command=lambda v='top', h='center': set_all_posn(v, h),
+#                            style="MyButton1.TButton")
+# but_top_center.pack(side='left', padx=5, pady=5)
 
-but_top_right = ttk.Button(button_fr_1,
-                           text='top-right',
-                           command=lambda v='top', h='right': set_all_posn(v, h),
-                           style="MyButton1.TButton")
-but_top_right.pack(side='left', padx=5, pady=5)
+# but_top_right = ttk.Button(button_fr_1,
+#                            text='top-right',
+#                            command=lambda v='top', h='right': set_all_posn(v, h),
+#                            style="MyButton1.TButton")
+# but_top_right.pack(side='left', padx=5, pady=5)
 
-but_bottom_left = ttk.Button(button_fr_1,
-                             text='bottom-left',
-                             command=lambda v='bottom', h='left': set_all_posn(v, h),
-                             style="MyButton1.TButton")
-but_bottom_left.pack(side='left', padx=5, pady=5)
+# but_bottom_left = ttk.Button(button_fr_1,
+#                              text='bottom-left',
+#                              command=lambda v='bottom', h='left': set_all_posn(v, h),
+#                              style="MyButton1.TButton")
+# but_bottom_left.pack(side='left', padx=5, pady=5)
 
-but_bottom_center = ttk.Button(button_fr_1,
-                              text='bottom-center',
-                              command=lambda v='bottom', h='center': set_all_posn(v, h),
-                              style="MyButton1.TButton")
-but_bottom_center.pack(side='left', padx=5, pady=5)
+# but_bottom_center = ttk.Button(button_fr_1,
+#                               text='bottom-center',
+#                               command=lambda v='bottom', h='center': set_all_posn(v, h),
+#                               style="MyButton1.TButton")
+# but_bottom_center.pack(side='left', padx=5, pady=5)
 
-but_bottom_right = ttk.Button(button_fr_1,
-                             text='bottom-right',
-                             command=lambda v='bottom', h='right': set_all_posn(v, h),
-                             style="MyButton1.TButton")
-but_bottom_right.pack(side='right', padx=5, pady=5)
+# but_bottom_right = ttk.Button(button_fr_1,
+#                              text='bottom-right',
+#                              command=lambda v='bottom', h='right': set_all_posn(v, h),
+#                              style="MyButton1.TButton")
+# but_bottom_right.pack(side='right', padx=5, pady=5)
 
-button_fr_1.pack(side='top')
+# button_fr_1.pack(side='top')
 
-button_fr_1.update()
+# button_fr_1.update()
+
+# canv_static1.create_rectangle(0, 0, viewport1['w']-1, viewport1['h']-1)
+# canv_static1.create_rectangle(viewport1['w'], 0, viewport1['w']-1, viewport1['h']-1)
+# canv_static1.create_rectangle(0, viewport1['h'], viewport1['w']-1, viewport1['h']-1)
+# canv_static1.create_rectangle(viewport1['w'], viewport1['h'], viewport1['w']-1, viewport1['h']-1)
+"""
+vp_wd_z = 149 = 150 - 1
+vp_wd   = 150
+vp_ht_z = 199 = 200 - 1
+vp_ht   = 200
+vp_htx2 = 300 = 150 * 2
+vp_wdx2_z = 399 = (200 * 2) - 1
+"""
+width_pixels = viewport1['w']-1
+height_pixels = viewport1['h']-1
+gutter = viewport1['gutter']
+v1_LU = 0, 0
+v1_RL = width_pixels, height_pixels
+v2_LU = width_pixels + 1 + gutter, 0, 
+v2_RL = 0, 0
+v3_LU = 0, 0
+v3_RL = 0, 0
+v4_LU = 0, 0
+v4_RL = 0, 0
+canv_static1.create_rectangle(0, 0, 199, 149)
+canv_static1.create_rectangle(200+10, 0, 399+10, 149)
+canv_static1.create_rectangle(0, 150+10, 199, 300+10)
+canv_static1.create_rectangle(200+10, 150+10, 399+10, 300+10)
+
+"""
+example:
+line_x_fr = custui.FramedCombo(plotting_main,
+                               cb_values=data_columns,
+                               display_name=x_text,
+                               name='line_x',
+                               var=line_data_x,
+                               posn=[0,1])
+"""
+verticals = ['top', 'center', 'bottom']
+horizontals = ['left', 'center', 'right']
+vertical_align = tk.StringVar()
+horizontal_align = tk.StringVar()
+
+v_choice = custui.FramedCombo(ui_fr,
+                              cb_values=verticals,
+                              display_name='vertical',
+                              name='v_choice',
+                              var=vertical_align,
+                              posn=[0,0])
+h_choice = custui.FramedCombo(ui_fr,
+                              cb_values=horizontals,
+                              display_name='horizontal',
+                              name='h_choice',
+                              var=horizontal_align,
+                              posn=[0,1])
+
+
 # geometry: w h x y
 # print(f'button_fr_1 geometry: {button_fr_1.winfo_geometry()}')
 # print(f'button_fr_1 w,h: {button_fr_1.winfo_width()}, {button_fr_1.winfo_height()}')
 
+but_align_images = ttk.Button(ui_fr,
+                              text="realign",
+                              command=align_images,
+                              style="MyButton1.TButton")
+but_align_images.grid(row=1, column=0)
 but_reset_size = ttk.Button(ui_fr,
                             text="reset window size",
                             command=lambda dims=default_dims: reset_window_size(dims),
                             style="MyButton1.TButton")
-but_reset_size.pack(side='top', padx=5, pady=10)
-
+# but_reset_size.pack(side='top', padx=5, pady=10)
+but_reset_size.grid(row=2, column=0)
 
 # or: command=root.destroy
 btnq = ttk.Button(ui_fr,
                   text="Quit",
                   command=root.quit,
                   style="MyButton1.TButton")
-btnq.pack(side="top", fill='x', padx=5, pady=5)
+# btnq.pack(side="top", fill='x', padx=5, pady=5)
+btnq.grid(row=3, column=0)
 
-ui_fr.pack(side='top', padx=5, pady=5)
+ui_fr.pack(side='top', ipadx=10, ipady=10, padx=5, pady=5)
 ui_fr.update()
 
 # print(f'canv_static1 h,w: {canv_static1.winfo_height()}, {canv_static1.winfo_width()}')
@@ -309,9 +360,8 @@ ui_fr.update()
 total_ht = lab.winfo_height() + canv_static1.winfo_height() + ui_fr.winfo_height() + 50
 total_wd = max(lab.winfo_width(), canv_static1.winfo_width(), ui_fr.winfo_width())
 default_dims = f'{total_wd}x{total_ht}'
-# print(f'total_wd, total_ht: {total_wd}, {total_ht}')
-root.minsize(total_wd, total_ht)
 
+root.minsize(total_wd, total_ht)
 
 if __name__ == "__main__":
     root.mainloop()

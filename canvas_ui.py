@@ -20,6 +20,7 @@ history:
 07-28-2024  Update function docstrings.
 08-03-2024  Added comments section to module header.
 08-16-2024  Edit get_posn to handle 2 or 3 images.
+08-19-2024  Add alignment options: vertical center, horizontal right.
 """
 from PIL import ImageTk
 import tkinter as tk
@@ -71,18 +72,22 @@ def get_posn(vp: dict,
 
     num_items = len(heights)
 
-    # print('vertical:')
     match vjust:
         case 'top':
-            # print('    top')
+            print('    v top')
             imp1.y, imp2.y = 0, 0
             imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
         case 'center':
-            # print('    v center')
+            print('    v center')
             # (vp ht - im ht) / 2
-            pass
+            imp1.y = (vp['h'] - heights[0]) / 2
+            imp2.y = (vp['h'] - heights[1]) / 2
+            if num_items > 2:
+                imp3.y = vp['h'] + vp['gutter'] + ((vp['h'] - heights[2]) / 2)
+            if num_items > 3:
+                imp4.y = vp['h'] + vp['gutter'] + ((vp['h'] - heights[3]) / 2)
         case 'bottom':
-            # print('    bottom')
+            print('    v bottom')
             imp1.y = vp['h'] - heights[0]
             imp2.y = vp['h'] - heights[1]
             if num_items > 2:
@@ -90,24 +95,28 @@ def get_posn(vp: dict,
                 if num_items > 3:
                     imp4.y = vp['h'] + vp['gutter'] + (vp['h'] - heights[3])
 
-    # print('horizontal:')
     match hjust:
         case 'left':
-            # print('left')
+            print('    h left')
             imp1.x, imp3.x = 0, 0
             imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
         case 'center':
-            # print('    h center')
-            imp1.x = vp['w'] - (widths[0])
-            imp2.x = vp['w'] + vp['gutter']
+            print('    h center')
+            imp1.x = (vp['w'] - (widths[0])) / 2
+            imp2.x = vp['w'] + vp['gutter'] + ((vp['w'] - (widths[1])) / 2)
             if num_items > 2:
-                imp3.x = vp['w'] - (widths[2])
+                imp3.x = (vp['w'] - (widths[2])) / 2
                 if num_items > 3:
-                    imp4.x = vp['w'] + vp['gutter']
+                    imp4.x = vp['w'] + vp['gutter'] + ((vp['w'] - (widths[3])) / 2)
         case 'right':
-            # print('    right')
+            print('    h right')
             # vp wd - im wd
-            pass
+            imp1.x = vp['w'] - widths[0]
+            imp2.x = vp['w'] + vp['gutter'] + (vp['w'] - widths[1])
+            if num_items > 2:
+                imp3.x = vp['w'] - widths[2]
+            if num_items > 3:
+                imp4.x = vp['w'] + vp['gutter'] + (vp['w'] - widths[3])
 
     return [imp1, imp2, imp3, imp4]
 
