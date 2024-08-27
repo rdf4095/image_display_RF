@@ -4,6 +4,15 @@ program: image_canvas_static.py
 purpose: Display up to 4 images in one canvas, with constant size.
 
 comments: Image viewports are set to a height-width ratio of 4:3.
+            image shapes are: portrait | or landscape --
+            viewport display order:
+            vp_0  vp_1
+            vp_2  vp_3
+
+            images can be positioned according to this logic:
+            landscape first:     OR      portrait first:
+            -- |                         |  --
+            |  --                        -- |
 
 author: Russell Folks
 
@@ -18,9 +27,16 @@ history:
 08-14-2024  Add function find_largest_objs to re-order the list of image paths
             according to image size.
 08-21-2024  Handle list of 2 images.
+08-24-2024  Set variables for displaying viewport borders. Make borders optional.
+08-26-2024  Pass arguments to align_images() instead of using globals.
+08-27-2024  Move layout comment to header, delete redundant variables. Move the
+            calculation and display of viewport borders (layout) to new function,
+            show_layout.
 """
 """
-TODO: - copy the logic for re-configuring canvas size to image_canvas_dyn.py.
+TODO: - If only two images, need option to dispay side-by-side or 1st-over-2nd.
+      - For shrink_canvas, need a setting for side-by-side (shrink to 
+        viewport height) vs 1st over 2nd (shrink to viewport width.)        
 """
 
 from PIL import Image, ImageTk
@@ -37,15 +53,8 @@ def reset_window_size(dims: str) -> None:
     root.geometry(dims)
 
 
-def set_top_left():
-    """Move an image to the top-left of the canvas."""
-    print('in set_top_left')
-    posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
-    canv_static1.moveto(imid_list[0], posn[0].x, posn[0].y)
-
-
-def set_all_posn(vert, horiz):
-    posn = cnv.get_posn(viewport1, heights, widths, horiz, vert)
+def set_all_posn(vp, widths, heights, horiz, vert) -> None:
+    posn = cnv.get_posn(vp, heights, widths, horiz, vert)
     
     canv_static1.moveto(1, posn[0].x, posn[0].y)
     canv_static1.moveto(2, posn[1].x, posn[1].y)
@@ -89,11 +98,49 @@ def find_largest_objs(dims: list, paths: list) -> list:
     return newpaths
 
 
-def align_images():
-    v = vertical_align.get()
+def align_images(vp: dict, widths: list, heights: list) -> None:
     h = horizontal_align.get()
-    # cnv.get_posn(viewport1, heights, widths, h, v)
-    set_all_posn(v, h)
+    v = vertical_align.get()
+    set_all_posn(vp, widths, heights, h, v)
+
+
+def show_vp_borders(canv: object, vp: dict) -> None:
+    """Display rectangles to show the viewport (vp) borders within a canvas.
+
+    Calculation of rectangle size and location is independent of vp size,
+    but as a sample calculation, assume viewports 200-wide, 150-high, and
+    gutter between viewports of 10.
+    vp_wd   = 200
+    vp_wd_z = 199 = vp_wd - 1
+    vp_wdx2_z = 399 = (vp_wd * 2) - 1
+
+    vp_ht   = 150
+    vp_ht_z = 149 = vp_ht - 1
+    vp_htx2 = 300 = vp_ht * 2
+    """
+    gutter = vp['gutter']
+    width_pixel = vp['w']-1
+    widthx2_pixel = (vp['w'] * 2) - 1
+    height_pixel = vp['h']-1
+    heightx2 = vp['h'] * 2
+
+    # Left Upper and Right Lower coordinates
+    v1_LU = 0, 0
+    v1_RL = width_pixel, height_pixel
+
+    v2_LU = vp['w'] + gutter, 0 
+    v2_RL = widthx2_pixel + gutter, height_pixel
+
+    v3_LU = 0, vp['h'] + gutter
+    v3_RL = width_pixel, heightx2 + gutter
+
+    v4_LU = vp['w'] + gutter, vp['h'] + gutter
+    v4_RL = widthx2_pixel + gutter, heightx2 + gutter
+
+    canv.create_rectangle(v1_LU + v1_RL)
+    canv.create_rectangle(v2_LU + v2_RL)
+    canv.create_rectangle(v3_LU + v3_RL)
+    canv.create_rectangle(v4_LU + v4_RL)
 
 
 # app window
@@ -108,6 +155,8 @@ style2 = styles_ttk.CreateStyles()
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
 # viewport1 = {'w': 400, 'h': 300, 'gutter': 10}
 my_pady = 10
+show_layout = True
+shrink_canvas = False
 
 canvas_reconfig = {'w': viewport1['w'] * 2 + viewport1['gutter'],
                    'h': viewport1['h'] * 2 + viewport1['gutter']}
@@ -123,22 +172,18 @@ image_paths = ['four moods_2.png',      tall
                'four moods_1.png',      wide
                ]
 """
-# image_paths = ['four moods_2.png',
-#                'forest of death_1.png',
-#                'parapsycho_1.png',
-#                'four moods_1.png',
-#                ]
-image_paths = ['forest of death_1.png',
-               'parapsycho_1.png'
+image_paths = ['four moods_2.png',
+               'forest of death_1.png',
+               'parapsycho_1.png',
+               'four moods_1.png',
                ]
+# test with only 2 images
+# image_paths = ['forest of death_1.png',
+#                'parapsycho_1.png'
+#                ]
 myPhotoImages = []
 heights = []
 widths = []
-
-# print('static images, native w,h and resized w,h:')
-# print(f'starting path list: {image_paths}')
-# print()
-# print('sizes of 4 ims:')
 
 for i, n in enumerate(image_paths):
     im_path = 'images/' + n
@@ -147,25 +192,8 @@ for i, n in enumerate(image_paths):
     heights.append(imsize['h'])
     widths.append(imsize['w'])
 
-"""
-re-order the images to position them for display according to this logic:
-display order:
-im_0  im_1
-im_2  im_3
-
-using widths, shapes:
--- |
-|  --
-
-using heights, shapes:
-|  --
--- |  
-"""
 new_image_paths = find_largest_objs(widths, image_paths)
 print(f'reordered path list: {new_image_paths}')
-
-heights = []
-widths = []
 
 for i, n in enumerate(new_image_paths):
     im_path = 'images/' + n
@@ -183,12 +211,6 @@ canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
                        borderwidth=0)
 
 posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
-# print()
-# print('positions of 4 ims:')
-# print(f"  im 0: {posn[0].x}, {posn[0].y}")
-# print(f"  im 1: {posn[1].x}, {posn[1].y}")
-# print(f"  im 2: {posn[2].x}, {posn[2].y}")
-# print(f"  im 3: {posn[3].x}, {posn[3].y}")
 
 imid_list = []
 for i, n in enumerate(new_image_paths):
@@ -199,9 +221,13 @@ for i, n in enumerate(new_image_paths):
 
 canv_static1.pack(ipadx=0, ipady=0, pady=10)
 canv_static1.update()
-# print(f'canv conf w,h: {canv_static1["width"]}, {canv_static1["height"]}')
-# print(f'canv  req w,h: {canv_static1.winfo_reqwidth()}, {canv_static1.winfo_reqheight()}')
-# print(f'canv      w,h: {canv_static1.winfo_width()}, {canv_static1.winfo_height()}')
+
+# print(f'canv_static1 h,w: {canv_static1.winfo_height()}, {canv_static1.winfo_width()}')
+if shrink_canvas:
+    canv_static1.configure(width=canvas_reconfig['w'], height=viewport1['h'])
+    # or:
+    # canv_static1.configure(width=viewport1['w'], height=canvas_reconfig['h'])
+
 
 # Scale the canvas to hold the images with no extra space.
 # This is to handle future situations like:
@@ -228,85 +254,9 @@ canv_static1.update()
 # UI elements ----------
 ui_fr = ttk.Frame(root, relief='groove')
 
-# button_fr_1 = ttk.Frame(ui_fr, relief='raised')
+if show_layout:
+    show_vp_borders(canv_static1, viewport1)
 
-# but_top_left = ttk.Button(button_fr_1,
-#                           text='top-left',
-#                           command=lambda v='top', h='left': set_all_posn(v, h),
-#                           style="MyButton1.TButton")
-# but_top_left.pack(side='left', padx=5, pady=5)
-
-# but_top_center = ttk.Button(button_fr_1,
-#                            text='top-center',
-#                            command=lambda v='top', h='center': set_all_posn(v, h),
-#                            style="MyButton1.TButton")
-# but_top_center.pack(side='left', padx=5, pady=5)
-
-# but_top_right = ttk.Button(button_fr_1,
-#                            text='top-right',
-#                            command=lambda v='top', h='right': set_all_posn(v, h),
-#                            style="MyButton1.TButton")
-# but_top_right.pack(side='left', padx=5, pady=5)
-
-# but_bottom_left = ttk.Button(button_fr_1,
-#                              text='bottom-left',
-#                              command=lambda v='bottom', h='left': set_all_posn(v, h),
-#                              style="MyButton1.TButton")
-# but_bottom_left.pack(side='left', padx=5, pady=5)
-
-# but_bottom_center = ttk.Button(button_fr_1,
-#                               text='bottom-center',
-#                               command=lambda v='bottom', h='center': set_all_posn(v, h),
-#                               style="MyButton1.TButton")
-# but_bottom_center.pack(side='left', padx=5, pady=5)
-
-# but_bottom_right = ttk.Button(button_fr_1,
-#                              text='bottom-right',
-#                              command=lambda v='bottom', h='right': set_all_posn(v, h),
-#                              style="MyButton1.TButton")
-# but_bottom_right.pack(side='right', padx=5, pady=5)
-
-# button_fr_1.pack(side='top')
-
-# button_fr_1.update()
-
-# canv_static1.create_rectangle(0, 0, viewport1['w']-1, viewport1['h']-1)
-# canv_static1.create_rectangle(viewport1['w'], 0, viewport1['w']-1, viewport1['h']-1)
-# canv_static1.create_rectangle(0, viewport1['h'], viewport1['w']-1, viewport1['h']-1)
-# canv_static1.create_rectangle(viewport1['w'], viewport1['h'], viewport1['w']-1, viewport1['h']-1)
-"""
-vp_wd_z = 149 = 150 - 1
-vp_wd   = 150
-vp_ht_z = 199 = 200 - 1
-vp_ht   = 200
-vp_htx2 = 300 = 150 * 2
-vp_wdx2_z = 399 = (200 * 2) - 1
-"""
-width_pixels = viewport1['w']-1
-height_pixels = viewport1['h']-1
-gutter = viewport1['gutter']
-v1_LU = 0, 0
-v1_RL = width_pixels, height_pixels
-v2_LU = width_pixels + 1 + gutter, 0, 
-v2_RL = 0, 0
-v3_LU = 0, 0
-v3_RL = 0, 0
-v4_LU = 0, 0
-v4_RL = 0, 0
-canv_static1.create_rectangle(0, 0, 199, 149)
-canv_static1.create_rectangle(200+10, 0, 399+10, 149)
-canv_static1.create_rectangle(0, 150+10, 199, 300+10)
-canv_static1.create_rectangle(200+10, 150+10, 399+10, 300+10)
-
-"""
-example:
-line_x_fr = custui.FramedCombo(plotting_main,
-                               cb_values=data_columns,
-                               display_name=x_text,
-                               name='line_x',
-                               var=line_data_x,
-                               posn=[0,1])
-"""
 verticals = ['top', 'center', 'bottom']
 horizontals = ['left', 'center', 'right']
 vertical_align = tk.StringVar()
@@ -325,24 +275,22 @@ h_choice = custui.FramedCombo(ui_fr,
                               var=horizontal_align,
                               posn=[0,1])
 
-
-# geometry: w h x y
-# print(f'button_fr_1 geometry: {button_fr_1.winfo_geometry()}')
-# print(f'button_fr_1 w,h: {button_fr_1.winfo_width()}, {button_fr_1.winfo_height()}')
-
 but_align_images = ttk.Button(ui_fr,
                               text="realign",
-                              command=align_images,
+                              command=lambda vp=viewport1,
+                                             ws = widths,
+                                             hs = heights: align_images(vp, ws, hs),
                               style="MyButton1.TButton")
 but_align_images.grid(row=1, column=0)
 but_reset_size = ttk.Button(ui_fr,
                             text="reset window size",
                             command=lambda dims=default_dims: reset_window_size(dims),
                             style="MyButton1.TButton")
-# but_reset_size.pack(side='top', padx=5, pady=10)
 but_reset_size.grid(row=2, column=0)
 
-# or: command=root.destroy
+ui_fr.pack(side='top', ipadx=10, ipady=10, padx=5, pady=5)
+ui_fr.update()
+
 btnq = ttk.Button(ui_fr,
                   text="Quit",
                   command=root.quit,
@@ -350,14 +298,13 @@ btnq = ttk.Button(ui_fr,
 # btnq.pack(side="top", fill='x', padx=5, pady=5)
 btnq.grid(row=3, column=0)
 
-ui_fr.pack(side='top', ipadx=10, ipady=10, padx=5, pady=5)
-ui_fr.update()
-
+# show some layout dimensions
+# ----
 # print(f'canv_static1 h,w: {canv_static1.winfo_height()}, {canv_static1.winfo_width()}')
 # print(f'ui_fr h,w: {ui_fr.winfo_height()}, {ui_fr.winfo_width()}')
 # print(f'lab h,w: {lab.winfo_height()}, {lab.winfo_width()}')
 
-total_ht = lab.winfo_height() + canv_static1.winfo_height() + ui_fr.winfo_height() + 50
+total_ht = lab.winfo_height() + canv_static1.winfo_height() + ui_fr.winfo_height()
 total_wd = max(lab.winfo_width(), canv_static1.winfo_width(), ui_fr.winfo_width())
 default_dims = f'{total_wd}x{total_ht}'
 

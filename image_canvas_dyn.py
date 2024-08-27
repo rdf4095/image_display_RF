@@ -14,10 +14,12 @@ history:
 02-08-2024  Make structure similar to image_disp_1canvas.py.
 02-21-2024  Use type-hinting in function signatures.
 02-21-2024  Structure the code like image_disp_1canvas.py (non-resizable canvas).
+08-26-2024  Added code (disabled) to scale the canvas to smaller images.
+08-27-2024  Update the handling of geometry: calculate size of canvas and UI.
+            Reorganize code, using image_canvas_static.py as a model.
 """
 """
-TODO: - could add frame below the canvas, for other widgets,
-        so the root geometry can be calculated accurately.
+TODO: - 
 """
 
 from PIL import Image
@@ -34,11 +36,9 @@ def reset_window_size(dims: str) -> None:
 
 
 # app window
-default_dims = "420x460"
+default_dims = ""
 
 root = tk.Tk()
-root.geometry(default_dims)
-root.minsize(420, 460)
 root.resizable(1, 1)
 root.title("image, ttk, pack")
 
@@ -60,32 +60,61 @@ canv_dyn1 = tk.Canvas(root,
                       highlightthickness=0,
                       background='green')
 
-print(f'viewport h, w: {viewport["h"]}, {viewport["w"]}')
-
 # canv_dyn1.bind('<Configure>', lambda ev, im=im1, vp=viewport, canv=canv_dyn1: cnv.resize_images(ev, im, vp, canv))
 canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
 canv_dyn1.pack(fill='both', expand=True)
 
+# Scale the canvas to hold the images with no extra space.
+# This is to handle future situations like:
+#   1) all imgs smaller than the viewport width, with no re-scaling
+#   2) all imgs smaller than the viewport height, with no re-scaling
+#   3) after re-scaling, all img widths or heights smaller than corresponding
+#      canvas dimension.
+# In all 3 cases, remove "extra" canvas width or height. The purpose is to allow
+# other objects to be positioned closer to the canvas.
 
-# other UI elements ----------
-but_reset_size = ttk.Button(root, text="reset image size",
+# canvas_config_ht = max(sum(heights[0::2]), sum(heights[1::2])) + viewport['gutter']
+# print(f'final gutter: {viewport1["gutter"]}')
+# canvas_reconfig['h'] = max(sum(heights[0::2]) + viewport1['gutter'],
+#                            sum(heights[1::2]) + viewport1['gutter'])
+# print(f'canvas_reconfig h: {canvas_reconfig["h"]}')
+# canvas_reconfig['h'] += (viewport1['gutter'])
+# print(f'canvas_reconfig h: {canvas_reconfig["h"]}')
+
+# print()
+# print(f"static canv reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h']}")
+
+# canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
+
+# UI elements ----------
+ui_fr = ttk.Frame(root, relief='groove')
+
+but_reset_size = ttk.Button(ui_fr, text="reset image size",
                             command=lambda dims=default_dims: reset_window_size(dims),
                             style="MyButton1.TButton")
 but_reset_size.pack(padx=5, pady=10)
 
-# or: command=root.destroy
+ui_fr.pack(side='top', ipadx=10, ipady=10, padx=5, pady=5)
+ui_fr.update()
+
 btnq = ttk.Button(root,
                   text="Quit",
                   command=root.quit,
                   style="MyButton1.TButton")
 btnq.pack(side="top", fill='x', padx=10)
 
-# print(f'but ht: {but_reset_size.winfo_height()}')
-# print(f'butq ht: {btnq.winfo_height()}')
-geometry_ht = viewport['h'] + (my_pady * 2) + 130  # other widgets
-geometry_wd = 408
+# show some layout dimensions
+# ----
+# print(f'canv_static1 h,w: {canv_static1.winfo_height()}, {canv_static1.winfo_width()}')
+# print(f'ui_fr h,w: {ui_fr.winfo_height()}, {ui_fr.winfo_width()}')
+# print(f'lab h,w: {lab.winfo_height()}, {lab.winfo_width()}')
 
-default_dims = str(geometry_wd) + 'x' + str(geometry_ht)
+total_ht = canv_dyn1.winfo_height() + ui_fr.winfo_height()
+total_wd = max(lab.winfo_width(), canv_dyn1.winfo_width(), ui_fr.winfo_width())
+# default_dims = str(geometry_wd) + 'x' + str(geometry_ht)
+default_dims = f'{total_wd}x{total_ht}'
+
+root.minsize(total_wd, total_ht)
 
 if __name__ == "__main__":
     root.mainloop()
