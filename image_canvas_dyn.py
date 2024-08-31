@@ -32,7 +32,15 @@ import canvas_ui as cnv
 styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
 
 def reset_window_size(dims: str) -> None:
+    print(f'geometry: {root.geometry()}')
     root.geometry(dims)
+    print(f'geometry: {root.geometry()}')
+
+def resize_root(ev: tk.Event,
+                  im: object,
+                  canv: object) -> None:
+    params1 = cnv.calc_resize(ev, im)
+    print(f'params1: {params1}')
 
 
 # app window
@@ -59,9 +67,12 @@ canv_dyn1 = tk.Canvas(root,
                       height=viewport['h'],
                       highlightthickness=0,
                       background='green')
+params = cnv.calc_resize_to_vp(viewport, im1)
+print(params)
 
 # canv_dyn1.bind('<Configure>', lambda ev, im=im1, vp=viewport, canv=canv_dyn1: cnv.resize_images(ev, im, vp, canv))
-canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
+# canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
+canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: resize_root(ev, im, canv))
 canv_dyn1.pack(fill='both', expand=True)
 
 # Scale the canvas to hold the images with no extra space.

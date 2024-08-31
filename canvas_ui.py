@@ -168,11 +168,31 @@ def resize_images(ev: tk.Event,
     """Create image object for display at a calculated size."""
     global im_tk_new1 
     params1 = calc_resize(ev, im)
+    print(f'params1: {params1}')
+    print(f"params1.im_resize_new w,h: {params1['im_resize_new'].width}, {params1['im_resize_new'].height}")
+    print(f"params1.im_resize_new size: {params1['im_resize_new'].size}")
 
     im_tk_new1 = ImageTk.PhotoImage(params1['im_resize_new'])
     canv.create_image(0, 0,
                       anchor=tk.NW,
                       image=im_tk_new1)
+
+def calc_resize_to_vp(vp, im):
+    canv_width = vp['w']
+    canv_height = vp['h']
+
+    canv_ratio = canv_width / canv_height
+    im_ratio = im.width / im.height
+    # print(f"ratios: canv, im, cw, ch: {canv_ratio}, {im_ratio}, {canv_width}, {canv_height}")
+
+    newsize = compare_ratios(canv_ratio, im_ratio, canv_width, canv_height)
+
+    params = {'im_resize_new': im.resize((newsize['w'], newsize['h'])),
+              'wid_int': int(canv_width),
+              'ht_int': int(canv_height)}
+    
+    return params
+
 
 
 def calc_resize(ev: tk.Event,
