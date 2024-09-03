@@ -35,14 +35,16 @@ history:
 08-29-2024  Bug fix: correctly re-order height/width lists.
 08-30-2024  More efficient way to re-order image lists, without opening files
             a second time.
+09-03-2024  Test align_images and align_images_2 with a list of values slightly
+            different from 'widths'. This works, but should the code prevent
+            images from overflowing the viewport?
 """
 """
-TODO: - Consider renaming find_largest_objs() to order_by_size().
-      - Consider another arrangement option: group around canvas center.
+TODO: - Consider another arrangement option: group around canvas center.
       - If only two images, need option to dispay side-by-side or 1st-over-2nd.
-      - For conform_canvas_to_images, need a setting for images displayed 
-        side-by-side (shrink to viewport height) vs 1st-above-2nd 
-        (shrink to viewport width.)        
+      - Future: for conform_canvas_to_images(), need a setting for images 
+        displayed side-by-side (shrink to viewport height) vs 1st-above-2nd
+        (shrink to viewport width.)
 """
 
 from PIL import Image, ImageTk
@@ -60,7 +62,9 @@ def reset_window_size(dims: str) -> None:
 
 
 def set_all_posn(vp, widths, heights, horiz, vert) -> None:
-    posn = cnv.get_posn(vp, heights, widths, horiz, vert)
+    print('in set_all_posn:')
+    print(f'   widths: {widths}')
+    posn = cnv.get_posn(vp, widths, heights, horiz, vert)
     # print(f'{heights[0]}, {posn[0].y}')
     # print(f'{heights[1]}, {posn[1].y}')
     # print(f'{heights[2]}, {posn[2].y}')
@@ -78,7 +82,7 @@ def order_by_size(dims: list, paths: list) -> list:
     
     dims specifies the dimension, as width or height.
     This function should only be called if len(dims) > 2.
-    For 1 or 2 images, there's little-to-no choice of display arrangement.
+    For 1 or 2 images, there's limited choice of display arrangement.
     """
     num_items = len(dims)
     sort_w = sorted(dims)
@@ -108,28 +112,52 @@ def order_by_size(dims: list, paths: list) -> list:
 
 
 def align_images(vp: dict, widths: list, heights: list) -> None:
+    """Set user-selected image alignment."""
     # print('in align_images...')
     h = horizontal_align.get()
     v = vertical_align.get()
-    set_all_posn(vp, widths, heights, h, v)
+    # print(f'widths: {widths}')
+    widths_test = [180, 117, 170, 180]
+    set_all_posn(vp, widths_test, heights, h, v)
 
+"""
+align_images_2: alternate form to set display alignment. 
+Like align_images, this is a callback executed when a Combobox item is
+selected in the FramedCombo object (see code below.)
+This version accesses variables in the enclosing scope, rather than having
+them passed in as arguments.
+Setting the callb (callback function) attribute for FramedCombo is "cleaner" 
+with this form, but it may not be best practice because:
+  - If module variable names change, this fxn needs updating.
+  - It seems to violate "explicit is better than implicit".
+"""
 
-# alternate form. Like align_images, this is a callback executed when a
-# Combobox item is selected in the FramedCombo object. (see code below)
-# This version accesses variables in the enclosing scope, rather than having
-# them passed in as arguments.
-# It works, and passing it to FramedCombo is "cleaner" but this form may not be
-# best practice because:
-#   - If module variable names change, this fxn needs updating.
-#   - It seems to violate "explicit is better than implicit".
-#   - It limits flexibility. With the align_images form you could, for example,
-#     pass a list other than 'widths'.
-# Does this qualify as an exception where it's okay to use non-local variables?
 def align_images_2(ev) -> None:
-    print('in align_images_2...')
+    """Set user-selected image alignment."""
+    # print('in align_images_2...')
     h = horizontal_align.get()
     v = vertical_align.get()
-    set_all_posn(viewport1, widths, heights, h, v)
+    widths_test = [180, 117, 170, 180]
+    set_all_posn(viewport1, widths_test, heights, h, v)
+
+"""
+Further discussion on image alignment:
+You could pass a list other than 'widths' (let's say 'w2'), and the images will
+be shifted left-right depending on how much the values in w2 differ from
+widths. The display position is calculated in get_posn() in the canvas_ui
+module, and will handle any inputs. However, it does not detect if images are
+outside the viewport limits, so images might be truncated on one side, which
+may or may not be what you want. The same applies to heights.
+
+One reason for passing different widths/heights is to fine-tune the display
+position. However, this isn't the best way to do that, because it is entirely
+the calling routine's responsibility to set reasonable limits to prevent
+ovetflow. Most routines in the current version of the app don't know the true
+image size, that is, independent of 'heights' and 'widths'.
+A better way to fine-tune is to introduce an argument for horizontal or
+vertical offset. Since get_posn (or its caller) already has heights, widths
+and vp, it would be straightforward to control overflow.
+"""
 
 
 def show_vp_borders(canv: object, vp: dict) -> None:
@@ -183,7 +211,7 @@ style2 = styles_ttk.CreateStyles()
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
 # viewport1 = {'w': 400, 'h': 300, 'gutter': 10}
 my_pady = 10
-show_layout = False
+show_layout = True
 conform_canvas_to_images = False
 
 canvas_reconfig = {'w': viewport1['w'] * 2 + viewport1['gutter'],
@@ -256,7 +284,7 @@ for i, n in enumerate(new_image_paths):
     heights.append(heights_start[orig])
     myPhotoImages.append(myPhotoImages_start[orig])
 
-# verify method 2 by comparing to method 1
+# compare method 2 to method 1
 # print(f'widths: {widths}')
 # print(f'widths_new: {widths_new}')
 # print(f'heights: {heights}')
@@ -266,7 +294,7 @@ canv_static1 = tk.Canvas(root, background="green")
 canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
                        borderwidth=0)
 
-posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
+posn = cnv.get_posn(viewport1, widths, heights, 'left', 'top')
 
 imid_list = []
 for i, n in enumerate(new_image_paths):
@@ -281,16 +309,16 @@ canv_static1.update()
 if conform_canvas_to_images:
     canv_static1.configure(width=canvas_reconfig['w'], height=viewport1['h'])
 
-
-# Scale the canvas to hold the images with no extra space.
-# This is to handle future situations like:
-#   1) all imgs smaller than the viewport width, with no re-scaling
-#   2) all imgs smaller than the viewport height, with no re-scaling
-#   3) after re-scaling, all img widths or heights smaller than corresponding
-#      canvas dimension.
-# In all 3 cases, remove "extra" canvas width or height. The purpose is to allow
-# other objects to be positioned closer to the canvas.
-
+"""
+Scale the canvas to hold the images with no extra space.
+This is to handle future situations like:
+  1) all imgs smaller than the viewport width, with no re-scaling
+  2) all imgs smaller than the viewport height, with no re-scaling
+  3) after re-scaling, all img widths or heights smaller than corresponding
+     canvas dimension.
+In all 3 cases, remove "extra" canvas width or height. The purpose is to allow
+other objects to be positioned closer to the canvas.
+"""
 # canvas_config_ht = max(sum(heights[0::2]), sum(heights[1::2])) + viewport['gutter']
 # print(f'final gutter: {viewport1["gutter"]}')
 # canvas_reconfig['h'] = max(sum(heights[0::2]) + viewport1['gutter'],
@@ -333,6 +361,7 @@ h_choice = custui.FramedCombo(ui_fr,
                               callb=lambda ev, vp=viewport1,
                                              ws = widths,
                                              hs = heights: align_images(vp, ws, hs),
+                            #   callb=align_images_2,
                               posn=[0,1])
 
 # but_align_images = ttk.Button(ui_fr,
@@ -359,8 +388,8 @@ btnq = ttk.Button(ui_fr,
 # btnq.pack(side="top", fill='x', padx=5, pady=5)
 btnq.grid(row=3, column=0)
 
-# show some layout dimensions
-# ----
+# report some layout dimensions
+# ------
 # print(f'canv_static1 h,w: {canv_static1.winfo_height()}, {canv_static1.winfo_width()}')
 # print(f'ui_fr h,w: {ui_fr.winfo_height()}, {ui_fr.winfo_width()}')
 # print(f'lab h,w: {lab.winfo_height()}, {lab.winfo_width()}')
