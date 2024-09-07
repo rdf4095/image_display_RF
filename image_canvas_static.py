@@ -38,12 +38,15 @@ history:
 09-03-2024  Test align_images and align_images_2 with a list of values slightly
             different from 'widths'. This works, but should the code prevent
             images from overflowing the viewport?
+09-05-2024  Type-hint the event parameter in align_images, add comments.
+            Remove the button to align images.
+09-07-2024  Test canvas_ui.py/get_1_posn, to set image positions individually.
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
       - If only two images, need option to dispay side-by-side or 1st-over-2nd.
-      - Future: for conform_canvas_to_images(), need a setting for images 
-        displayed side-by-side (shrink to viewport height) vs 1st-above-2nd
+      - Future: for conform_canvas_to_images(), handle images displayed 
+        side-by-side (shrink to viewport height) vs 1st-above-2nd
         (shrink to viewport width.)
 """
 
@@ -64,17 +67,40 @@ def reset_window_size(dims: str) -> None:
 def set_all_posn(vp, widths, heights, horiz, vert) -> None:
     print('in set_all_posn:')
     print(f'   widths: {widths}')
-    posn = cnv.get_posn(vp, widths, heights, horiz, vert)
+
+    # set all image positions
+    # posn = cnv.get_posn(vp, widths, heights, horiz, vert)
+
+    # test get_posn
     # print(f'{heights[0]}, {posn[0].y}')
     # print(f'{heights[1]}, {posn[1].y}')
     # print(f'{heights[2]}, {posn[2].y}')
     # print(f'{heights[3]}, {posn[3].y}')
-    canv_static1.moveto(1, posn[0].x, posn[0].y)
-    canv_static1.moveto(2, posn[1].x, posn[1].y)
-    if len(heights) > 2:
-        canv_static1.moveto(3, posn[2].x, posn[2].y)
-    if len(heights) > 3:
-        canv_static1.moveto(4, posn[3].x, posn[3].y)
+
+    # with get_1_posn(), each image must be set individually.
+    posn1 = cnv.get_1_posn(vp, widths[0], heights[0], horiz, vert)
+    posn2 = cnv.get_1_posn(vp, widths[1], heights[1], horiz, vert, True)
+    posn3 = cnv.get_1_posn(vp, widths[2], heights[2], horiz, vert, False, True)
+    posn4 = cnv.get_1_posn(vp, widths[3], heights[3], horiz, vert, True, True)
+    
+    # test get_1_posn
+    # print(f'{posn1.x}, {posn1.y}')
+    # print(f'{posn2.x}, {posn2.y}')
+    # print(f'{posn3.x}, {posn3.y}')
+    # print(f'{posn4.x}, {posn4.y}')
+
+    # canv_static1.moveto(1, posn[0].x, posn[0].y)
+    canv_static1.moveto(1, posn1.x, posn1.y)
+    canv_static1.moveto(2, posn2.x, posn2.y)
+    canv_static1.moveto(3, posn3.x, posn3.y)
+    canv_static1.moveto(4, posn4.x, posn4.y)
+
+
+    # canv_static1.moveto(2, posn[1].x, posn[1].y)
+    # if len(heights) > 2:
+    #     canv_static1.moveto(3, posn[2].x, posn[2].y)
+    # if len(heights) > 3:
+    #     canv_static1.moveto(4, posn[3].x, posn[3].y)
 
 
 def order_by_size(dims: list, paths: list) -> list:
@@ -111,17 +137,33 @@ def order_by_size(dims: list, paths: list) -> list:
     return newpaths
 
 
-def align_images(vp: dict, widths: list, heights: list) -> None:
+"""
+align_images: callback for the Combobox in class FramedCombobox.
+Notes about using type-hinting:
+The parameter 'ev' is an event passed when an item in the Combobox is
+selected. With a print(type(ev)) you can confirm that the type for 'ev' is
+'tkinter.Event', but you can't do: align_images(ev: tkinter.Event).
+Because tkinter was imported as 'tk', use: align_images(ev: tk.Event).
+
+You could hint with a string: align_images(ev: 'tkinter.Event') which explicitly 
+suggests what is expected. However, the Pylance extension (if loaded) will
+complain that tkinter is an undefined variable (no runtime problem though.)
+
+Whether hinting with the string form or the tk.Event form, the inspect module,
+inspect.signature(align_images), will properly report that the expected type
+for 'ev' is 'tkinter.Event' (still a string.)
+"""
+
+def align_images(ev: tk.Event, vp: dict, widths: list, heights: list) -> None:
     """Set user-selected image alignment."""
-    # print('in align_images...')
     h = horizontal_align.get()
     v = vertical_align.get()
-    # print(f'widths: {widths}')
-    widths_test = [180, 117, 170, 180]
-    set_all_posn(vp, widths_test, heights, h, v)
+    # test alternate list
+    # widths_test = [180, 117, 170, 180]
+    set_all_posn(vp, widths, heights, h, v)
 
 """
-align_images_2: alternate form to set display alignment. 
+align_images_2: alternate form of the callback. 
 Like align_images, this is a callback executed when a Combobox item is
 selected in the FramedCombo object (see code below.)
 This version accesses variables in the enclosing scope, rather than having
@@ -134,11 +176,11 @@ with this form, but it may not be best practice because:
 
 def align_images_2(ev) -> None:
     """Set user-selected image alignment."""
-    # print('in align_images_2...')
     h = horizontal_align.get()
     v = vertical_align.get()
-    widths_test = [180, 117, 170, 180]
-    set_all_posn(viewport1, widths_test, heights, h, v)
+    # test alternate list
+    # widths_test = [180, 117, 170, 180]
+    set_all_posn(viewport1, widths, heights, h, v)
 
 """
 Further discussion on image alignment:
@@ -247,10 +289,10 @@ widths = []
 for i, n in enumerate(image_paths):
     im_path = 'images/' + n
     im = Image.open(im_path)
-    # print(f'size: {im.size}')
     imsize = cnv.init_image_size(im, viewport1)
     widths_start.append(imsize['w'])
     heights_start.append(imsize['h'])
+
     im_resize = im.resize((imsize['w'], imsize['h']))
     im_tk = ImageTk.PhotoImage(im_resize)
     # print(f'    im_tk: ({im_tk.width()}, {im_tk.height()})')
@@ -260,6 +302,7 @@ new_image_paths = order_by_size(widths_start, image_paths)
 
 # re-order the images and their shapes
 # method 1: Use new path list to get each image and reconstruct widths, heights.
+# --------
 # In this method, the last 3 lines would not be needed in the previous enumerate.
 # for i, n in enumerate(new_image_paths):
 #     im_path = 'images/' + n
@@ -275,10 +318,12 @@ new_image_paths = order_by_size(widths_start, image_paths)
 # print()
 
 # method 2: Use new path list to find and re-order the existing lists
+# --------
 #           (widths, heights, myPhotoImages.)
 #           Does not require opening the images and reading sizes again.
 for i, n in enumerate(new_image_paths):
     orig = image_paths.index(n)
+    print(i, n, orig)
     # print(f'found {n} at {orig}')
     widths.append(widths_start[orig])
     heights.append(heights_start[orig])
@@ -348,9 +393,10 @@ v_choice = custui.FramedCombo(ui_fr,
                               display_name='vertical',
                               name='v_choice',
                               var=vertical_align,
-                              callb=lambda ev, vp=viewport1,
-                                             ws = widths,
-                                             hs = heights: align_images(vp, ws, hs),
+                              callb=lambda ev, 
+                                           vp=viewport1,
+                                           ws = widths,
+                                           hs = heights: align_images(ev, vp, ws, hs),
                             #   callb=align_images_2,
                               posn=[0,0])
 h_choice = custui.FramedCombo(ui_fr,
@@ -358,19 +404,12 @@ h_choice = custui.FramedCombo(ui_fr,
                               display_name='horizontal',
                               name='h_choice',
                               var=horizontal_align,
-                              callb=lambda ev, vp=viewport1,
-                                             ws = widths,
-                                             hs = heights: align_images(vp, ws, hs),
+                              callb=lambda ev,
+                                           vp=viewport1,
+                                           ws = widths,
+                                           hs = heights: align_images(ev, vp, ws, hs),
                             #   callb=align_images_2,
                               posn=[0,1])
-
-# but_align_images = ttk.Button(ui_fr,
-#                               text="realign",
-#                               command=lambda vp=viewport1,
-#                                              ws = widths,
-#                                              hs = heights: align_images(vp, ws, hs),
-#                               style="MyButton1.TButton")
-# but_align_images.grid(row=1, column=0)
 
 but_reset_size = ttk.Button(ui_fr,
                             text="reset window size",
@@ -397,6 +436,14 @@ btnq.grid(row=3, column=0)
 total_ht = lab.winfo_height() + canv_static1.winfo_height() + ui_fr.winfo_height()
 total_wd = max(lab.winfo_width(), canv_static1.winfo_width(), ui_fr.winfo_width())
 default_dims = f'{total_wd}x{total_ht}'
+
+# optional: report function signatures.
+# import inspect
+
+# print('align_images:')
+# sig = (inspect.signature(align_images))
+# print(f'   signature: {sig}')
+
 
 root.minsize(total_wd, total_ht)
 

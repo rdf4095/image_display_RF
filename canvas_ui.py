@@ -24,6 +24,11 @@ history:
 08-24-2024  Add function handle_extra to calculate position for images if
             there are more than two of them. Add type hinting for functions
             that don't have it.
+09-07-2024  Add get_1_posn(), to set a single image position.
+"""
+"""
+TODO: - Should get_posn() be modified to prevent images from overflowing 
+        the viewport? This should probably be done by the caller.
 """
 from PIL import ImageTk
 import tkinter as tk
@@ -89,8 +94,8 @@ def handle_extra(vp: dict,
 
 
 def get_posn(vp: dict,
-             heights: list,
              widths: list,
+             heights: list,
              hjust: str = 'center',
              vjust: str = 'bottom') -> list:
     """Assign image locations within a canvas.
@@ -145,6 +150,34 @@ def get_posn(vp: dict,
             imp3.x, imp4.x = handle_extra(vp, widths, 'w')
 
     return [imp1, imp2, imp3, imp4]
+
+
+def get_1_posn(vp, wd, ht, hjust, vjust, shiftR=False, shiftD=False):
+    """Assign location for one image in a Canvas."""
+    imp = Posn(0, 0)
+
+    match vjust:
+        case 'top':
+            imp.y = 0
+        case 'center':
+            imp.y = (vp['h'] - ht) / 2
+        case 'bottom':
+            imp.y = vp['h'] - ht
+
+    match hjust:
+        case 'left':
+            imp.x = 0
+        case 'center':
+            imp.x = (vp['w'] - wd) / 2
+        case 'right':
+            imp.x = vp['w'] - wd
+
+    if shiftR is True:
+        imp.x += (vp['w'] + vp['gutter'])
+    if shiftD is True:
+        imp.y += (vp['h'] + vp['gutter'])
+
+    return imp
 
 
 def init_image_size(im: object,
