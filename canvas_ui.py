@@ -1,13 +1,13 @@
 """
 module: canvas_ui.py
 
-purpose: types and functions for canvas to contain images.
+purpose: Types and functions for a canvas intended to contain images.
 
 comments: To display images at their native size(s) when img dimensions
-          are smaller than both the viewport height and width, a new routine 
-          should be written, to replace compare_ratios.
-          Alternatively, init_image_size wouldn't be needed in the calling
-          module; native sizes would be used directly. That approach is not
+          are smaller than both the viewport height and width, EITHER: a new 
+          routine should be written, to replace compare_ratios, OR:
+          init_image_size wouldn't be needed in the calling
+          module, and native sizes would be used directly. That approach is not
           transparent to the caller however.
           Note: this hasn't been tested.
 
@@ -24,7 +24,9 @@ history:
 08-24-2024  Add function handle_extra to calculate position for images if
             there are more than two of them. Add type hinting for functions
             that don't have it.
-09-07-2024  Add get_1_posn(), to set a single image position.
+09-07-2024  Add get_1_posn(), to determine a single image position.
+09-12-2024  Add get_positions() to determine up to four image positions.
+            Remove handle_extra().
 """
 """
 TODO: - Should get_posn() be modified to prevent images from overflowing 
@@ -64,92 +66,25 @@ def Posn_init(self, x: int, y: int):
 Posn = type('Posn', (), {"__init__": Posn_init})
 
 
-def handle_extra(vp: dict,
-                 lis: list,
-                 dim: str,
-                 posn='edge') -> tuple:
-    """If there are more than 2 images, position extra ones.
+def get_positions(vp, wd, ht, arrange):
+    pos_list = []
 
-    arguments:
-    vp = viewport shape
-    lis = image heights or widths
-    dim = 'h' for horizontal or 'v' for vertical arrangement
-    posn = whether viewport space is split (space on either side of image.)
-    """
-    adjust = 2 if posn == 'split' else 1
-    num = len(lis)
-    match dim:
-        case 'h':
-            if num > 2:
-                v3 = vp[dim] + vp['gutter'] + ((vp[dim] - lis[2]) / adjust)
-            if num > 3:
-                v4 = vp[dim] + vp['gutter'] + ((vp[dim] - lis[3]) / adjust)
-        case 'w':
-            if num > 2:
-                v3 = (vp[dim] - lis[2]) / adjust
-            if num > 3:
-                v4 = vp[dim] + vp['gutter'] + ((vp[dim] - lis[3]) / adjust)
+    posn1 = get_1_posn(vp, wd[0], ht[0], arrange[0], arrange[1])
+    pos_list.append(posn1)
 
-    return v3,v4
+    if len(wd) >= 2:
+        posn2 = get_1_posn(vp, wd[1], ht[1], arrange[0], arrange[1], True)
+        pos_list.append(posn2)
 
+    if len(wd) >= 3:
+        posn3 = get_1_posn(vp, wd[2], ht[2], arrange[0], arrange[1], False, True)
+        pos_list.append(posn3)
 
-def get_posn(vp: dict,
-             widths: list,
-             heights: list,
-             hjust: str = 'center',
-             vjust: str = 'bottom') -> list:
-    """Assign image locations within a canvas.
+    if len(wd) == 4:
+        posn4 = get_1_posn(vp, wd[3], ht[3], arrange[0], arrange[1], True, True)
+        pos_list.append(posn4)
 
-       arguments:
-       vp = viewport width, height, gutter size
-       heights, widths = sizes of up to four images
-       hjust, vjust = type of justification for image positioning
-    """
-    imp1 = Posn(0, 0)
-    imp2 = Posn(0, 0)
-    imp3 = Posn(0, 0)
-    imp4 = Posn(0, 0)
-
-    # print(f'{vjust}, {hjust}')
-    match vjust:
-        case 'top':
-            imp1.y, imp2.y = 0, 0
-            imp3.y, imp4.y = vp['h'] + vp['gutter'], vp['h'] + vp['gutter']
-        case 'center':
-            # (vp ht - im ht) / 2
-            imp1.y = (vp['h'] - heights[0]) / 2
-            imp2.y = (vp['h'] - heights[1]) / 2
-            # imp3.y, imp4.y = handle_extra(num_items, vp, heights, 'h', posn='split')
-            imp3.y, imp4.y = handle_extra(vp, heights, 'h', posn='split')
-        case 'bottom':
-            imp1.y = vp['h'] - heights[0]
-            imp2.y = vp['h'] - heights[1]
-            # imp3.y, imp4.y = handle_extra(num_items, vp, heights, 'h')
-            imp3.y, imp4.y = handle_extra(vp, heights, 'h')
-
-    match hjust:
-        case 'left':
-            imp1.x, imp3.x = 0, 0
-            imp2.x, imp4.x = vp['w'] + vp['gutter'], vp['w'] + vp['gutter']
-        case 'center':
-            imp1.x = (vp['w'] - (widths[0])) / 2
-            imp2.x = vp['w'] + vp['gutter'] + ((vp['w'] - (widths[1])) / 2)
-            # xvals = handle_extra(num_items, vp, widths, 'w', posn='split')
-            # imp3.x = xvals[0]
-            # imp4.x = xvals[1]
-            # imp3.x, imp4.x = handle_extra(num_items, vp, widths, 'w', posn='split')
-            imp3.x, imp4.x = handle_extra(vp, widths, 'w', posn='split')
-        case 'right':
-            # vp wd - im wd
-            imp1.x = vp['w'] - widths[0]
-            imp2.x = vp['w'] + vp['gutter'] + (vp['w'] - widths[1])
-            # xvals = handle_extra(num_items, vp, widths, 'w')
-            # imp3.x = xvals[0]
-            # imp4.x = xvals[1]
-            # imp3.x, imp4.x = handle_extra(num_items, vp, widths, 'w')
-            imp3.x, imp4.x = handle_extra(vp, widths, 'w')
-
-    return [imp1, imp2, imp3, imp4]
+    return pos_list
 
 
 def get_1_posn(vp, wd, ht, hjust, vjust, shiftR=False, shiftD=False):

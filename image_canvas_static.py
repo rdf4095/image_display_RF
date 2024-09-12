@@ -41,6 +41,9 @@ history:
 09-05-2024  Type-hint the event parameter in align_images, add comments.
             Remove the button to align images.
 09-07-2024  Test canvas_ui.py/get_1_posn, to set image positions individually.
+09-12-2024  Use canvas_ui,py/get_positions to get 1-4 image positions.
+            get_1_posn is not directly called in this module. Remove most
+            comments around align_images().
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
@@ -64,43 +67,35 @@ def reset_window_size(dims: str) -> None:
     root.geometry(dims)
 
 
-def set_all_posn(vp, widths, heights, horiz, vert) -> None:
-    print('in set_all_posn:')
-    print(f'   widths: {widths}')
-
-    # set all image positions
-    # posn = cnv.get_posn(vp, widths, heights, horiz, vert)
-
-    # test get_posn
-    # print(f'{heights[0]}, {posn[0].y}')
-    # print(f'{heights[1]}, {posn[1].y}')
-    # print(f'{heights[2]}, {posn[2].y}')
-    # print(f'{heights[3]}, {posn[3].y}')
-
-    # with get_1_posn(), each image must be set individually.
+def set_all_posn_OLD(vp: list,
+                 widths: list,
+                 heights: list,
+                 horiz: str,
+                 vert: str) -> None:
+    """Set position for all images in a canvas."""
     posn1 = cnv.get_1_posn(vp, widths[0], heights[0], horiz, vert)
     posn2 = cnv.get_1_posn(vp, widths[1], heights[1], horiz, vert, True)
     posn3 = cnv.get_1_posn(vp, widths[2], heights[2], horiz, vert, False, True)
     posn4 = cnv.get_1_posn(vp, widths[3], heights[3], horiz, vert, True, True)
     
-    # test get_1_posn
-    # print(f'{posn1.x}, {posn1.y}')
-    # print(f'{posn2.x}, {posn2.y}')
-    # print(f'{posn3.x}, {posn3.y}')
-    # print(f'{posn4.x}, {posn4.y}')
-
-    # canv_static1.moveto(1, posn[0].x, posn[0].y)
     canv_static1.moveto(1, posn1.x, posn1.y)
     canv_static1.moveto(2, posn2.x, posn2.y)
     canv_static1.moveto(3, posn3.x, posn3.y)
     canv_static1.moveto(4, posn4.x, posn4.y)
 
 
-    # canv_static1.moveto(2, posn[1].x, posn[1].y)
-    # if len(heights) > 2:
-    #     canv_static1.moveto(3, posn[2].x, posn[2].y)
-    # if len(heights) > 3:
-    #     canv_static1.moveto(4, posn[3].x, posn[3].y)
+def set_all_posn(canvas, positions, wd) -> None:
+    """Set position for all images in a canvas."""    
+    canvas.moveto(1, positions[0].x, positions[0].y)
+
+    if len(wd) >= 2:
+        canvas.moveto(2, positions[1].x, positions[1].y)
+
+    if len(wd) >= 3:
+        canvas.moveto(3, positions[2].x, positions[2].y)
+
+    if len(wd) == 4:
+        canvas.moveto(4, positions[3].x, positions[3].y)
 
 
 def order_by_size(dims: list, paths: list) -> list:
@@ -138,68 +133,31 @@ def order_by_size(dims: list, paths: list) -> list:
 
 
 """
-align_images: callback for the Combobox in class FramedCombobox.
-Notes about using type-hinting:
-The parameter 'ev' is an event passed when an item in the Combobox is
-selected. With a print(type(ev)) you can confirm that the type for 'ev' is
-'tkinter.Event', but you can't do: align_images(ev: tkinter.Event).
-Because tkinter was imported as 'tk', use: align_images(ev: tk.Event).
-
-You could hint with a string: align_images(ev: 'tkinter.Event') which explicitly 
-suggests what is expected. However, the Pylance extension (if loaded) will
-complain that tkinter is an undefined variable (no runtime problem though.)
-
-Whether hinting with the string form or the tk.Event form, the inspect module,
-inspect.signature(align_images), will properly report that the expected type
-for 'ev' is 'tkinter.Event' (still a string.)
+Callback function executed when a Combobox item is selected
+in class FramedCombobox. See the FramedCombo instance below.
 """
-
-def align_images(ev: tk.Event, vp: dict, widths: list, heights: list) -> None:
+# method 1
+# --------
+def align_images(ev: tk.Event,
+                 vp: dict,
+                 widths: list,
+                 heights: list) -> None:
     """Set user-selected image alignment."""
     h = horizontal_align.get()
     v = vertical_align.get()
-    # test alternate list
-    # widths_test = [180, 117, 170, 180]
-    set_all_posn(vp, widths, heights, h, v)
 
-"""
-align_images_2: alternate form of the callback. 
-Like align_images, this is a callback executed when a Combobox item is
-selected in the FramedCombo object (see code below.)
-This version accesses variables in the enclosing scope, rather than having
-them passed in as arguments.
-Setting the callb (callback function) attribute for FramedCombo is "cleaner" 
-with this form, but it may not be best practice because:
-  - If module variable names change, this fxn needs updating.
-  - It seems to violate "explicit is better than implicit".
-"""
+    positions = cnv.get_positions(viewport1, widths, heights, (h, v))
+    set_all_posn(canv_static1, positions, widths)
 
-def align_images_2(ev) -> None:
+# method 2
+# --------
+def align_images_2(ev: tk.Event) -> None:
     """Set user-selected image alignment."""
     h = horizontal_align.get()
     v = vertical_align.get()
-    # test alternate list
-    # widths_test = [180, 117, 170, 180]
-    set_all_posn(viewport1, widths, heights, h, v)
 
-"""
-Further discussion on image alignment:
-You could pass a list other than 'widths' (let's say 'w2'), and the images will
-be shifted left-right depending on how much the values in w2 differ from
-widths. The display position is calculated in get_posn() in the canvas_ui
-module, and will handle any inputs. However, it does not detect if images are
-outside the viewport limits, so images might be truncated on one side, which
-may or may not be what you want. The same applies to heights.
-
-One reason for passing different widths/heights is to fine-tune the display
-position. However, this isn't the best way to do that, because it is entirely
-the calling routine's responsibility to set reasonable limits to prevent
-ovetflow. Most routines in the current version of the app don't know the true
-image size, that is, independent of 'heights' and 'widths'.
-A better way to fine-tune is to introduce an argument for horizontal or
-vertical offset. Since get_posn (or its caller) already has heights, widths
-and vp, it would be straightforward to control overflow.
-"""
+    positions = cnv.get_positions(viewport1, widths, heights, (h, v))
+    set_all_posn(canv_static1, positions, widths, (h, v))
 
 
 def show_vp_borders(canv: object, vp: dict) -> None:
@@ -275,7 +233,13 @@ image_paths = ['four moods_2.png',
                'parapsycho_1.png',
                'four moods_1.png',
                ]
-# test with only 2 images
+# test with 3 images
+# image_paths = ['four moods_2.png',
+#                'forest of death_1.png',
+#                'parapsycho_1.png'
+#                ]
+
+# test with 2 images
 # image_paths = ['forest of death_1.png',
 #                'parapsycho_1.png'
 #                ]
@@ -300,27 +264,6 @@ for i, n in enumerate(image_paths):
 
 new_image_paths = order_by_size(widths_start, image_paths)
 
-# re-order the images and their shapes
-# method 1: Use new path list to get each image and reconstruct widths, heights.
-# --------
-# In this method, the last 3 lines would not be needed in the previous enumerate.
-# for i, n in enumerate(new_image_paths):
-#     im_path = 'images/' + n
-#     im = Image.open(im_path)
-#     imsize = cnv.init_image_size(im, viewport1)
-#     heights.append(imsize['h'])
-#     widths.append(imsize['w'])
-#     im_resize = im.resize((imsize['w'], imsize['h']))
-#     im_tk = ImageTk.PhotoImage(im_resize)
-#     myPhotoImages.append(im_tk)
-    
-#     print(f"  im {i} ({n}), {widths[i]}, {heights[i]}")
-# print()
-
-# method 2: Use new path list to find and re-order the existing lists
-# --------
-#           (widths, heights, myPhotoImages.)
-#           Does not require opening the images and reading sizes again.
 for i, n in enumerate(new_image_paths):
     orig = image_paths.index(n)
     print(i, n, orig)
@@ -329,30 +272,27 @@ for i, n in enumerate(new_image_paths):
     heights.append(heights_start[orig])
     myPhotoImages.append(myPhotoImages_start[orig])
 
-# compare method 2 to method 1
-# print(f'widths: {widths}')
-# print(f'widths_new: {widths_new}')
-# print(f'heights: {heights}')
-# print(f'heights_new: {heights_new}')
-
 canv_static1 = tk.Canvas(root, background="green")
 canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
                        borderwidth=0)
 
-posn = cnv.get_posn(viewport1, widths, heights, 'left', 'top')
+arrangement = ('left', 'top')
+positions = cnv.get_positions(viewport1, widths, heights, arrangement)
 
 imid_list = []
 for i, n in enumerate(new_image_paths):
     tagname = "tag_im" + str(i)
-    imid = canv_static1.create_image(posn[i].x, posn[i].y, anchor=tk.NW, image=myPhotoImages[i],
-                                  tag = tagname)
+    imid = canv_static1.create_image(positions[i].x, positions[i].y, anchor=tk.NW, image=myPhotoImages[i],
+                                     tag = tagname)
     imid_list.append(imid)
 
-canv_static1.pack(ipadx=0, ipady=0, pady=10)
+canv_static1.pack(padx=10, pady=10)
 canv_static1.update()
 
 if conform_canvas_to_images:
     canv_static1.configure(width=canvas_reconfig['w'], height=viewport1['h'])
+
+
 
 """
 Scale the canvas to hold the images with no extra space.
@@ -376,6 +316,8 @@ other objects to be positioned closer to the canvas.
 # print(f"static canv reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h']}")
 
 # canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
+
+
 
 # UI elements ----------
 ui_fr = ttk.Frame(root, relief='groove')
@@ -424,7 +366,6 @@ btnq = ttk.Button(ui_fr,
                   text="Quit",
                   command=root.quit,
                   style="MyButton1.TButton")
-# btnq.pack(side="top", fill='x', padx=5, pady=5)
 btnq.grid(row=3, column=0)
 
 # report some layout dimensions
@@ -443,7 +384,6 @@ default_dims = f'{total_wd}x{total_ht}'
 # print('align_images:')
 # sig = (inspect.signature(align_images))
 # print(f'   signature: {sig}')
-
 
 root.minsize(total_wd, total_ht)
 
