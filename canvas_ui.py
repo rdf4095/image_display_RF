@@ -27,6 +27,7 @@ history:
 09-07-2024  Add get_1_posn(), to determine a single image position.
 09-12-2024  Add get_positions() to determine up to four image positions.
             Remove handle_extra().
+09-13-2024  Add type hinting to get_1_posn and get_positions.
 """
 """
 TODO: - Should get_posn() be modified to prevent images from overflowing 
@@ -66,32 +67,42 @@ def Posn_init(self, x: int, y: int):
 Posn = type('Posn', (), {"__init__": Posn_init})
 
 
-def get_positions(vp, wd, ht, arrange):
+def get_positions(vp: dict,
+                  wd: list,
+                  ht: list,
+                  arrange: tuple) -> list:
+    """Assign locations for all images in a Canvas."""
     pos_list = []
 
-    posn1 = get_1_posn(vp, wd[0], ht[0], arrange[0], arrange[1])
+#    posn1 = get_1_posn(vp, wd[0], ht[0], arrange[0], arrange[1])
+    posn1 = get_1_posn(vp, wd[0], ht[0], arrange)
     pos_list.append(posn1)
 
     if len(wd) >= 2:
-        posn2 = get_1_posn(vp, wd[1], ht[1], arrange[0], arrange[1], True)
+        posn2 = get_1_posn(vp, wd[1], ht[1], arrange, True)
         pos_list.append(posn2)
 
     if len(wd) >= 3:
-        posn3 = get_1_posn(vp, wd[2], ht[2], arrange[0], arrange[1], False, True)
+        posn3 = get_1_posn(vp, wd[2], ht[2], arrange, False, True)
         pos_list.append(posn3)
 
     if len(wd) == 4:
-        posn4 = get_1_posn(vp, wd[3], ht[3], arrange[0], arrange[1], True, True)
+        posn4 = get_1_posn(vp, wd[3], ht[3], arrange, True, True)
         pos_list.append(posn4)
 
     return pos_list
 
 
-def get_1_posn(vp, wd, ht, hjust, vjust, shiftR=False, shiftD=False):
+def get_1_posn(vp: dict,
+               wd: list,
+               ht: list,
+               arrange: tuple,
+               shiftR: book = False,
+               shiftD: bool = False) -> Posn:
     """Assign location for one image in a Canvas."""
     imp = Posn(0, 0)
 
-    match vjust:
+    match arrange[1]:
         case 'top':
             imp.y = 0
         case 'center':
@@ -99,7 +110,7 @@ def get_1_posn(vp, wd, ht, hjust, vjust, shiftR=False, shiftD=False):
         case 'bottom':
             imp.y = vp['h'] - ht
 
-    match hjust:
+    match arrange[0]:
         case 'left':
             imp.x = 0
         case 'center':
@@ -131,10 +142,10 @@ def init_image_size(im: object,
 # --------------
 def resize_images(ev: tk.Event,
                   im: object,
-                #   vp: dict,
                   canv: object) -> None:
     """Create image object for display at a calculated size."""
     global im_tk_new1 
+
     params1 = calc_resize(ev, im)
     print(f'params1: {params1}')
     print(f"params1.im_resize_new w,h: {params1['im_resize_new'].width}, {params1['im_resize_new'].height}")
@@ -145,7 +156,7 @@ def resize_images(ev: tk.Event,
                       anchor=tk.NW,
                       image=im_tk_new1)
 
-def calc_resize_to_vp(vp, im):
+def calc_resize_to_vp(vp: dict, im: object) -> dict:
     canv_width = vp['w']
     canv_height = vp['h']
 
@@ -163,8 +174,7 @@ def calc_resize_to_vp(vp, im):
 
 
 
-def calc_resize(ev: tk.Event,
-                im: object) -> object:
+def calc_resize(ev: tk.Event, im: object) -> dict:
     """Calculate new size for a dynamically resizable canvas."""
     this_canv = ev.widget
     canv_width = ev.width
@@ -179,7 +189,9 @@ def calc_resize(ev: tk.Event,
     this_canv.delete(1)
 
     params = {'im_resize_new': im.resize((newsize['w'], newsize['h'])),
-              'wid_int': int(canv_width),
-              'ht_int': int(canv_height)}
+              'im_wd_new': newsize['w'],
+              'im_ht_new': newsize['h'],
+              'canv_wd': int(canv_width),
+              'canv_ht': int(canv_height)}
     
     return params
