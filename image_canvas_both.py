@@ -11,6 +11,7 @@ author: Russell Folks
 history:
 -------
 03-04-2024  creation
+10-13-2024  Debug the new approach to sizing static images.
 """
 # TODO: add frame below the canvas, for other widgets, so the
 #       root geometry can be calculated accurately.
@@ -65,26 +66,23 @@ for i, n in enumerate(image_paths):
     imsize = cnv.init_image_size(im, viewport1)
     heights.append(imsize['h'])
     widths.append(imsize['w'])
+         
     im_resize = im.resize((imsize['w'], imsize['h']))
     im_tk = ImageTk.PhotoImage(im_resize)
     myPhotoImages.append(im_tk)
-    print(f"{im.width}, {im.height}")
-    print(f"    {imsize['w']}, {imsize['h']}")
-    print()
+#    print(f"{im.width}, {im.height}")
+#    print(f"    {imsize['w']}, {imsize['h']}")
+#    print()
 
 canv_static1 = tk.Canvas(root, background = "green")
 
-posn = cnv.get_posn(viewport1, heights, widths, 'left', 'top')
-print('positions of 4 ims:')
-print(f"  im 1: {posn[0].x}, {posn[0].y}")
-print(f"  im 2: {posn[1].x}, {posn[1].y}")
-print(f"  im 3: {posn[2].x}, {posn[2].y}")
-print(f"  im 4: {posn[3].x}, {posn[3].y}")
+arrangement = ('left', 'top')
+positions = cnv.get_positions(viewport1, widths, heights, arrangement)
 
 imid_list = []
 for i, n in enumerate(image_paths):
     tagname = "tag_im" + str(i)
-    imid = canv_static1.create_image(posn[i].x, posn[i].y, anchor=tk.NW, image=myPhotoImages[i],
+    imid = canv_static1.create_image(positions[i].x, positions[i].y, anchor=tk.NW, image=myPhotoImages[i],
                                   tag = tagname)
     imid_list.append(imid)
 
