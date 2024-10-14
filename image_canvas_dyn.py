@@ -62,18 +62,24 @@ lab.pack(pady=my_pady)
 image_path = "images/parapsycho_1.png"
 im1 = Image.open(image_path)
 
+imsize = cnv.init_image_size(im1, viewport)
+print(f'imsize: {imsize}')
+
 canv_dyn1 = tk.Canvas(root,
                       width=viewport['w'],
                       height=viewport['h'],
                       highlightthickness=0,
                       background='green')
+canv_dyn1.pack(fill='both', expand=True)
+
 params = cnv.calc_resize_to_vp(viewport, im1)
 print(params)
 
-# canv_dyn1.bind('<Configure>', lambda ev, im=im1, vp=viewport, canv=canv_dyn1: cnv.resize_images(ev, im, vp, canv))
-# canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
-canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: resize_root(ev, im, canv))
-canv_dyn1.pack(fill='both', expand=True)
+canv_dyn1.configure(width=400, height=300)
+
+canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: resize_images(ev, im, canv))
+
+canv_dyn1.addtage_all("all")
 
 # Scale the canvas to hold the images with no extra space.
 # This is to handle future situations like:
@@ -122,7 +128,6 @@ btnq.pack(side="top", fill='x', padx=10)
 
 total_ht = canv_dyn1.winfo_height() + ui_fr.winfo_height()
 total_wd = max(lab.winfo_width(), canv_dyn1.winfo_width(), ui_fr.winfo_width())
-# default_dims = str(geometry_wd) + 'x' + str(geometry_ht)
 default_dims = f'{total_wd}x{total_ht}'
 
 root.minsize(total_wd, total_ht)
