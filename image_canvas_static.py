@@ -44,6 +44,8 @@ history:
 09-12-2024  Use canvas_ui,py/get_positions to get 1-4 image positions.
             get_1_posn is not directly called in this module. Remove most
             comments around align_images().
+09-16-2024  Disable reset_window_size() and its button: this app does not use
+            resizable canvas.
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
@@ -53,38 +55,20 @@ TODO: - Consider another arrangement option: group around canvas center.
         (shrink to viewport width.)
 """
 
-from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
 from importlib.machinery import SourceFileLoader
+
+from PIL import Image, ImageTk
 
 import canvas_ui as cnv
 
 styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
 custui = SourceFileLoader("custui", "../../development/python/pandas_02/rf_custom_ui.py").load_module()
 
-def reset_window_size(dims: str) -> None:
-    root.geometry(dims)
-
-
-def set_all_posn_OLD(vp: list,
-                 widths: list,
-                 heights: list,
-                 horiz: str,
-                 vert: str) -> None:
-    """Set position for all images in a canvas."""
-    posn1 = cnv.get_1_posn(vp, widths[0], heights[0], horiz, vert)
-    posn2 = cnv.get_1_posn(vp, widths[1], heights[1], horiz, vert, True)
-    posn3 = cnv.get_1_posn(vp, widths[2], heights[2], horiz, vert, False, True)
-    posn4 = cnv.get_1_posn(vp, widths[3], heights[3], horiz, vert, True, True)
-    
-    canv_static1.moveto(1, posn1.x, posn1.y)
-    canv_static1.moveto(2, posn2.x, posn2.y)
-    canv_static1.moveto(3, posn3.x, posn3.y)
-    canv_static1.moveto(4, posn4.x, posn4.y)
-
-
-def set_all_posn(canvas, positions, wd) -> None:
+def set_all_posn(canvas: object,
+                 positions: list,
+                 wd: list) -> None:
     """Set position for all images in a canvas."""    
     canvas.moveto(1, positions[0].x, positions[0].y)
 
@@ -146,7 +130,7 @@ def align_images(ev: tk.Event,
     h = horizontal_align.get()
     v = vertical_align.get()
 
-    positions = cnv.get_positions(viewport1, widths, heights, (h, v))
+    positions = cnv.get_positions(vp, widths, heights, (h, v))
     set_all_posn(canv_static1, positions, widths)
 
 # method 2
@@ -273,8 +257,8 @@ for i, n in enumerate(new_image_paths):
     myPhotoImages.append(myPhotoImages_start[orig])
 
 canv_static1 = tk.Canvas(root, background="green")
-canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
-                       borderwidth=0)
+# canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
+#                        borderwidth=0)
 
 arrangement = ('left', 'top')
 positions = cnv.get_positions(viewport1, widths, heights, arrangement)
@@ -288,6 +272,12 @@ for i, n in enumerate(new_image_paths):
 
 canv_static1.pack(padx=10, pady=10)
 canv_static1.update()
+
+print(f'widths: {widths}')
+print(f'heights: {heights}')
+
+print(f"reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h'}")
+canv_static1.configure(width=canvas_reconfig['w'], height=viewport1['h'])
 
 if conform_canvas_to_images:
     canv_static1.configure(width=canvas_reconfig['w'], height=viewport1['h'])
@@ -353,11 +343,11 @@ h_choice = custui.FramedCombo(ui_fr,
                             #   callb=align_images_2,
                               posn=[0,1])
 
-but_reset_size = ttk.Button(ui_fr,
-                            text="reset window size",
-                            command=lambda dims=default_dims: reset_window_size(dims),
-                            style="MyButton1.TButton")
-but_reset_size.grid(row=2, column=0)
+# but_reset_size = ttk.Button(ui_fr,
+#                             text="reset window size",
+#                             command=lambda dims=default_dims: reset_window_size(dims),
+#                             style="MyButton1.TButton")
+# but_reset_size.grid(row=2, column=0)
 
 ui_fr.pack(side='top', ipadx=10, ipady=10, padx=5, pady=5)
 ui_fr.update()
