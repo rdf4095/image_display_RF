@@ -4,37 +4,15 @@ program: image_canvas_static.py
 purpose: Display up to 4 images in one canvas, with constant size.
 
 comments: Display viewports are set to a height-width ratio of 4:3.
-            image shapes are: portrait | or landscape --
-            viewport display order:
-            vp_0  vp_1
-            vp_2  vp_3
-
-            images can be positioned according to this logic:
-            landscape first:     OR      portrait first:
-            -- |                         |  --
-            |  --                        -- |
+          Control widgets allow the images to be horizontally and
+          vetically justified different ways within their viewports.
 
 author: Russell Folks
 
 history:
 -------
 07-24-2024  creation
-07-30-2024  Add buttons to change image placement.
-08-03-2024  Combine image-move functions into one fxn.
-08-06-2024  Calculate the window geometry needed after images are displayed, and
-            use this to control window minimum and reset.
-08-08-2024  Test canvas: actual size is slightly larger than configured size.
-08-14-2024  Add function find_largest_objs to re-order the list of image paths
-            according to image size.
-08-21-2024  Handle list of 2 images.
-08-24-2024  Set variables for displaying viewport borders. Make borders optional.
-08-26-2024  Pass arguments to align_images() instead of using globals.
-08-27-2024  Move layout comment to header, delete redundant variables. Move the
-            calculation and display of viewport borders (layout) to new function,
-            show_layout.
-08-29-2024  Bug fix: correctly re-order height/width lists.
-08-30-2024  More efficient way to re-order image lists, without opening files
-            a second time.
+...
 09-03-2024  Test align_images and align_images_2 with a list of values slightly
             different from 'widths'. This works, but should the code prevent
             images from overflowing the viewport?
@@ -46,13 +24,15 @@ history:
             comments around align_images().
 09-16-2024  Disable reset_window_size() and its button: this app does not use
             resizable canvas.
+10-22-2024  Update module header, remove old commented code.
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
       - If only two images, need option to dispay side-by-side or 1st-over-2nd.
       - Future: for conform_canvas_to_images(), handle images displayed 
         side-by-side (shrink to viewport height) vs 1st-above-2nd
-        (shrink to viewport width.)
+        (shrink to viewport width.) This isn't needed if we're using
+        order_by_size().
 """
 
 import tkinter as tk
@@ -64,7 +44,7 @@ from PIL import Image, ImageTk
 import canvas_ui as cnv
 
 styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
-custui = SourceFileLoader("custui", "../../development/python/pandas_02/rf_custom_ui.py").load_module()
+custui = SourceFileLoader("custui", "../pandas_data_RF/rf_custom_ui.py").load_module()
 
 def set_all_posn(canvas: object,
                  positions: list,
@@ -85,7 +65,7 @@ def set_all_posn(canvas: object,
 def order_by_size(dims: list, paths: list) -> list:
     """Find the 2 images of greatest dimension.
     
-    dims specifies the dimension, as width or height.
+    dims specifies the dimension, as image widths or heights.
     This function should only be called if len(dims) > 2.
     For 1 or 2 images, there's limited choice of display arrangement.
     """
@@ -183,17 +163,25 @@ def show_vp_borders(canv: object, vp: dict) -> None:
     canv.create_rectangle(v4_LU + v4_RL)
 
 
-# app window
-default_dims = ""
+def get_checkb(var):
+    v = var.get()
+    print("\t", v)
+    if v is 1:
+        centered = True
+    else:
+        centered = False
 
+
+# app window
 root = tk.Tk()
 root.resizable(1, 1)
-root.title("image, ttk, pack")
+root.title("static canvas, ttk, pack")
 
+default_dims = ""
+centered = False
 style2 = styles_ttk.CreateStyles()
 
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
-# viewport1 = {'w': 400, 'h': 300, 'gutter': 10}
 my_pady = 10
 show_layout = True
 conform_canvas_to_images = False
@@ -201,21 +189,14 @@ conform_canvas_to_images = False
 canvas_reconfig = {'w': viewport1['w'] * 2 + viewport1['gutter'],
                    'h': viewport1['h'] * 2 + viewport1['gutter']}
 
-lab = ttk.Label(root, text="up to 4 fixed-size images",
+lab = ttk.Label(root, text="up to 4 images in a fixed-size canvas",
                 style="MyLabel.TLabel")
 lab.pack(pady=my_pady)
 
-"""
-image_paths = ['four moods_2.png',      tall
-               'forest of death_1.png', tall
-               'parapsycho_1.png',      wide
-               'four moods_1.png',      wide
-               ]
-"""
-image_paths = ['four moods_2.png',
-               'forest of death_1.png',
-               'parapsycho_1.png',
-               'four moods_1.png',
+image_paths = ['four moods_2.png',      # tall
+               'forest of death_1.png', # tall
+               'parapsycho_1.png',      # wide
+               'four moods_1.png',      # wide
                ]
 # test with 3 images
 # image_paths = ['four moods_2.png',
@@ -243,29 +224,32 @@ for i, n in enumerate(image_paths):
 
     im_resize = im.resize((imsize['w'], imsize['h']))
     im_tk = ImageTk.PhotoImage(im_resize)
-    # print(f'    im_tk: ({im_tk.width()}, {im_tk.height()})')
     myPhotoImages_start.append(im_tk)
+    # print(f'    im_tk: ({im_tk.width()}, {im_tk.height()})')
 
-new_image_paths = order_by_size(widths_start, image_paths)
+# new_image_paths = order_by_size(widths_start, image_paths)
+new_image_paths = order_by_size(heights_start, image_paths)
 
 for i, n in enumerate(new_image_paths):
     orig = image_paths.index(n)
-    print(i, n, orig)
-    # print(f'found {n} at {orig}')
+    # print(i, n, orig)
     widths.append(widths_start[orig])
     heights.append(heights_start[orig])
     myPhotoImages.append(myPhotoImages_start[orig])
 
 canv_static1 = tk.Canvas(root, background="green")
-# canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'],
-#                        borderwidth=0)
 
-arrangement = ('left', 'top')
+if centered:
+    arrangement = ('cc', 'cc')
+else:
+    arrangement = ('left', 'top')
+
 positions = cnv.get_positions(viewport1, widths, heights, arrangement)
 
 imid_list = []
 for i, n in enumerate(new_image_paths):
     tagname = "tag_im" + str(i)
+    print(f'position {i}: {positions[i].x}, {positions[i].y}')
     imid = canv_static1.create_image(positions[i].x, positions[i].y, anchor=tk.NW, image=myPhotoImages[i],
                                      tag = tagname)
     imid_list.append(imid)
@@ -273,19 +257,19 @@ for i, n in enumerate(new_image_paths):
 canv_static1.pack(padx=10, pady=10)
 canv_static1.update()
 
-print(f'widths: {widths}')
-print(f'heights: {heights}')
+# print(f'widths: {widths}')
+# print(f'heights: {heights}')
+# print(f"reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h']}")
 
-print(f"reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h'}")
-canv_static1.configure(width=canvas_reconfig['w'], height=viewport1['h'])
+canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
 
+# doesn't yet work correctly
 if conform_canvas_to_images:
     canv_static1.configure(width=canvas_reconfig['w'], height=viewport1['h'])
 
 
-
 """
-Scale the canvas to hold the images with no extra space.
+Scale the canvas to hold images with no extra space.
 This is to handle future situations like:
   1) all imgs smaller than the viewport width, with no re-scaling
   2) all imgs smaller than the viewport height, with no re-scaling
@@ -343,20 +327,23 @@ h_choice = custui.FramedCombo(ui_fr,
                             #   callb=align_images_2,
                               posn=[0,1])
 
-# but_reset_size = ttk.Button(ui_fr,
-#                             text="reset window size",
-#                             command=lambda dims=default_dims: reset_window_size(dims),
-#                             style="MyButton1.TButton")
-# but_reset_size.grid(row=2, column=0)
-
 ui_fr.pack(side='top', ipadx=10, ipady=10, padx=5, pady=5)
 ui_fr.update()
+
+cbvar1 = tk.IntVar(value=0)
+canv_centered = ttk.Checkbutton(ui_fr,
+                                text='canvas centered',
+                                variable=cbvar1,
+                                name='canvas_centered',
+                                command=lambda var=cbvar1: get_checkb(var))
+canv_centered.grid(row=3, column=0, columnspan=2)
+
 
 btnq = ttk.Button(ui_fr,
                   text="Quit",
                   command=root.quit,
                   style="MyButton1.TButton")
-btnq.grid(row=3, column=0)
+btnq.grid(row=4, column=0, columnspan=2)
 
 # report some layout dimensions
 # ------
@@ -367,6 +354,8 @@ btnq.grid(row=3, column=0)
 total_ht = lab.winfo_height() + canv_static1.winfo_height() + ui_fr.winfo_height()
 total_wd = max(lab.winfo_width(), canv_static1.winfo_width(), ui_fr.winfo_width())
 default_dims = f'{total_wd}x{total_ht}'
+print(f'default_dims: {default_dims}')
+print(f'    {lab.winfo_height()}, {canv_static1.winfo_height()}, {ui_fr.winfo_height()}')
 
 # optional: report function signatures.
 # import inspect

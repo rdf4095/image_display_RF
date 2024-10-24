@@ -4,7 +4,7 @@ program: image_canvas_dyn.py
 purpose: Display an image in a canvas, and allow resizing
          as window dimensions change.
 
-comments: based on image_disp_ncanvas.py
+comments: 
 
 author: Russell Folks
 
@@ -17,15 +17,17 @@ history:
 08-26-2024  Added code (disabled) to scale the canvas to smaller images.
 08-27-2024  Update the handling of geometry: calculate size of canvas and UI.
             Reorganize code, using image_canvas_static.py as a model.
+10-22-2024  Minor whitespace and other order-of-steps changes for consistency
+            with image_canvas_static.py.
 """
 """
 TODO: - 
 """
-
-from PIL import Image
 import tkinter as tk
 from tkinter import ttk
 from importlib.machinery import SourceFileLoader
+
+from PIL import Image
 
 import canvas_ui as cnv
 
@@ -36,6 +38,7 @@ def reset_window_size(dims: str) -> None:
     root.geometry(dims)
     print(f'geometry: {root.geometry()}')
 
+
 def resize_root(ev: tk.Event,
                   im: object,
                   canv: object) -> None:
@@ -44,25 +47,24 @@ def resize_root(ev: tk.Event,
 
 
 # app window
-default_dims = ""
-
 root = tk.Tk()
 root.resizable(1, 1)
-root.title("image, ttk, pack")
+root.title("dynamic canvas, ttk, pack")
 
+default_dims = ""
 style2 = styles_ttk.CreateStyles()
 
 viewport = {'w': 400, 'h': 300, 'gutter': 10}
 my_pady = 10
 
-lab = ttk.Label(root, text="resizable image in a canvas",
+lab = ttk.Label(root, text="image in a resizable canvas",
                 style="MyLabel.TLabel")
 lab.pack(pady=my_pady)
 
 image_path = "images/parapsycho_1.png"
 im1 = Image.open(image_path)
-
 imsize = cnv.init_image_size(im1, viewport)
+
 print(f'imsize: {imsize}')
 
 canv_dyn1 = tk.Canvas(root,
@@ -75,13 +77,13 @@ canv_dyn1.pack(fill='both', expand=True)
 params = cnv.calc_resize_to_vp(viewport, im1)
 print(params)
 
-canv_dyn1.configure(width=400, height=300)
+canv_dyn1.configure(width=viewport['w'], height=viewport['h'])
 
-canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: resize_images(ev, im, canv))
+canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
 
-canv_dyn1.addtage_all("all")
+canv_dyn1.addtag_all("all")
 
-# Scale the canvas to hold the images with no extra space.
+# Scale the canvas to hold images with no extra space.
 # This is to handle future situations like:
 #   1) all imgs smaller than the viewport width, with no re-scaling
 #   2) all imgs smaller than the viewport height, with no re-scaling

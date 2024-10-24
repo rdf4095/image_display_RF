@@ -13,13 +13,19 @@ history:
 03-04-2024  creation
 10-13-2024  Debug the new approach to sizing static images.
 """
-# TODO: add frame below the canvas, for other widgets, so the
-#       root geometry can be calculated accurately.
+"""
+TODO: - add frame below the canvas, for other widgets, so the
+        root geometry can be calculated accurately.
+      - consider calculating default_dims instead of hardcoding it.
+        It's more complex here than in image_canvas_static.py because
+        there is more than one canvas here.
+"""
 
-from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
 from importlib.machinery import SourceFileLoader
+
+from PIL import Image, ImageTk
 
 import canvas_ui as cnv
 
@@ -51,10 +57,10 @@ lab = ttk.Label(root, text="canvas 1: multiple fixed images\n canvas 2: one imag
                 style="MyLabel.TLabel")
 lab.pack(pady=my_pady)
 
-image_paths = ['living skeleton_1.png',
-                'brand new testament_1.png',
-                'medium_85_1.png',
-                'buck rogers_39_e.png']
+image_paths = ['four moods_1.png',
+               'forest of death_1.png',
+               'four moods_2.png',
+               'parapsycho_1.png']
 myPhotoImages = []
 heights = []
 widths = []
@@ -91,7 +97,10 @@ canv_static1.update()
 
 # Scale the canvas to hold the images with no extra space.
 # canvas_config_ht = max(sum(heights[0::2]), sum(heights[1::2])) + viewport['gutter']
+# original:
 canvas_reconfig['h'] = max(sum(heights[0::2]) + viewport1['gutter'], sum(heights[1::2]) + viewport1['gutter']) + (viewport1['gutter'] * 2)
+# LOCAL:
+# canvas_reconfig['h'] = max(sum(heights[0::2]), sum([heights[1], heights[3]]) + viewport1['gutter'])
 
 print(f"static canv reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h']}")
 
@@ -101,7 +110,6 @@ canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
 
 im_dyn = Image.open('images/' + image_paths[3])
 
-# print(f"dyn canvas w,h: {viewport2['w']}, {viewport2['h']}")
 viewport2 = {'w': 400, 'h': 300, 'gutter': 10}
 
 canv_dyn1 = tk.Canvas(root,
@@ -112,7 +120,8 @@ canv_dyn1 = tk.Canvas(root,
 
 print(f'viewport h, w: {viewport2["h"]}, {viewport2["w"]}')
 
-canv_dyn1.bind('<Configure>', lambda ev, im=im_dyn, vp=viewport2, canv=canv_dyn1: cnv.resize_images(ev, im, vp, canv))
+# canv_dyn1.bind('<Configure>', lambda ev, im=im_dyn, vp=viewport2, canv=canv_dyn1: cnv.resize_images(ev, im, vp, canv))
+canv_dyn1.bind('<Configure>', lambda ev, im=im_dyn, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
 canv_dyn1.pack(fill="both", expand=True)
 
 

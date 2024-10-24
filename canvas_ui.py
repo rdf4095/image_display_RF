@@ -28,10 +28,13 @@ history:
 09-12-2024  Add get_positions() to determine up to four image positions.
             Remove handle_extra().
 09-13-2024  Add type hinting to get_1_posn and get_positions.
+10-23-2024  Add function set_canv_centered, to move all images toward the
+            center of the canvas, allowing for the viewport gutter.
 """
 """
 TODO: - Should get_posn() be modified to prevent images from overflowing 
         the viewport? This should probably be done by the caller.
+      - refactor set_canv_centered.
 """
 from PIL import ImageTk
 import tkinter as tk
@@ -74,7 +77,15 @@ def get_positions(vp: dict,
     """Assign locations for all images in a Canvas."""
     pos_list = []
 
-#    posn1 = get_1_posn(vp, wd[0], ht[0], arrange[0], arrange[1])
+    
+
+
+    if arrange == ('cc', 'cc'):
+        pos_list = set_canv_centered(vp, wd, ht)
+        print()
+        print(f'    pos_list: {pos_list[0].x}, {pos_list[0].y}')
+        return pos_list
+
     posn1 = get_1_posn(vp, wd[0], ht[0], arrange)
     pos_list.append(posn1)
 
@@ -97,7 +108,7 @@ def get_1_posn(vp: dict,
                wd: list,
                ht: list,
                arrange: tuple,
-               shiftR: book = False,
+               shiftR: bool = False,
                shiftD: bool = False) -> Posn:
     """Assign location for one image in a Canvas."""
     imp = Posn(0, 0)
@@ -124,6 +135,35 @@ def get_1_posn(vp: dict,
         imp.y += (vp['h'] + vp['gutter'])
 
     return imp
+
+
+def set_canv_centered(vp, wd, ht):
+    positions = []
+    imp1 = Posn(0, 0)
+    imp2 = Posn(0, 0)
+    imp3 = Posn(0, 0)
+    imp4 = Posn(0, 0)
+
+    imp1.x = vp['w'] - wd[0]
+    imp1.y = vp['h'] - ht[0]
+    positions.append(imp1)
+
+    imp2.x = vp['w'] + vp['gutter']
+    imp2.y = vp['h'] - ht[1]
+    positions.append(imp2)
+
+    imp3.x = vp['w'] - wd[2]
+    imp3.y = vp['h'] + vp['gutter']
+    positions.append(imp3)
+
+    imp4.x = vp['w'] + vp['gutter']
+    imp4.y = vp['h'] + vp['gutter']
+    positions.append(imp4)
+
+    # for n, p in enumerate(positions):
+    #     print(f'    imp: {positions[n].x}, {positions[n].y}')
+
+    return positions
 
 
 def init_image_size(im: object,
