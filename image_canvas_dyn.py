@@ -39,6 +39,7 @@ def reset_window_size(dims: str) -> None:
     print(f'geometry: {root.geometry()}')
 
 
+# ?? doesn't work
 def resize_root(ev: tk.Event,
                   im: object,
                   canv: object) -> None:
@@ -65,8 +66,6 @@ image_path = "images/parapsycho_1.png"
 im1 = Image.open(image_path)
 imsize = cnv.init_image_size(im1, viewport)
 
-print(f'imsize: {imsize}')
-
 canv_dyn1 = tk.Canvas(root,
                       width=viewport['w'],
                       height=viewport['h'],
@@ -78,9 +77,7 @@ params = cnv.calc_resize_to_vp(viewport, im1)
 print(params)
 
 canv_dyn1.configure(width=viewport['w'], height=viewport['h'])
-
 canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
-
 canv_dyn1.addtag_all("all")
 
 # Scale the canvas to hold images with no extra space.

@@ -30,6 +30,7 @@ history:
 09-13-2024  Add type hinting to get_1_posn and get_positions.
 10-23-2024  Add function set_canv_centered, to move all images toward the
             center of the canvas, allowing for the viewport gutter.
+10-26-2024  Update set_canv_centered() to handle less than 4 images.
 """
 """
 TODO: - Should get_posn() be modified to prevent images from overflowing 
@@ -76,9 +77,6 @@ def get_positions(vp: dict,
                   arrange: tuple) -> list:
     """Assign locations for all images in a Canvas."""
     pos_list = []
-
-    
-
 
     if arrange == ('cc', 'cc'):
         pos_list = set_canv_centered(vp, wd, ht)
@@ -148,17 +146,20 @@ def set_canv_centered(vp, wd, ht):
     imp1.y = vp['h'] - ht[0]
     positions.append(imp1)
 
-    imp2.x = vp['w'] + vp['gutter']
-    imp2.y = vp['h'] - ht[1]
-    positions.append(imp2)
+    if len(wd) >= 2:
+        imp2.x = vp['w'] + vp['gutter']
+        imp2.y = vp['h'] - ht[1]
+        positions.append(imp2)
 
-    imp3.x = vp['w'] - wd[2]
-    imp3.y = vp['h'] + vp['gutter']
-    positions.append(imp3)
+    if len(wd) >= 3:
+        imp3.x = vp['w'] - wd[2]
+        imp3.y = vp['h'] + vp['gutter']
+        positions.append(imp3)
 
-    imp4.x = vp['w'] + vp['gutter']
-    imp4.y = vp['h'] + vp['gutter']
-    positions.append(imp4)
+    if len(wd) >= 4:
+        imp4.x = vp['w'] + vp['gutter']
+        imp4.y = vp['h'] + vp['gutter']
+        positions.append(imp4)
 
     # for n, p in enumerate(positions):
     #     print(f'    imp: {positions[n].x}, {positions[n].y}')

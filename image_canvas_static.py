@@ -25,6 +25,8 @@ history:
 09-16-2024  Disable reset_window_size() and its button: this app does not use
             resizable canvas.
 10-22-2024  Update module header, remove old commented code.
+10-24-2024  Add button to center images in the whole canvas.
+10-26-2024  Add functionality for the centering button.
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
@@ -107,6 +109,7 @@ def align_images(ev: tk.Event,
                  widths: list,
                  heights: list) -> None:
     """Set user-selected image alignment."""
+    # print('in align_images')
     h = horizontal_align.get()
     v = vertical_align.get()
 
@@ -163,13 +166,54 @@ def show_vp_borders(canv: object, vp: dict) -> None:
     canv.create_rectangle(v4_LU + v4_RL)
 
 
-def get_checkb(var):
+def align_images_canv_centered(var):
+    # print('in align_images_canv_centered')
     v = var.get()
-    print("\t", v)
+    # print("\t", v)
     if v is 1:
-        centered = True
+        centered = True    # not used...
+        # apply centering relative to the canvas as a whole
+        positions = cnv.get_positions(viewport1, widths, heights, ('cc', 'cc'))
+        set_all_posn(canv_static1, positions, widths)
+
+        # disable alignment Comboboxes
+
+        # method 1
+        # works but not ideal: uses a semi-private variable
+        # (that only exists in a class method). See method 4
+        # v_choice.cb.configure(state='disabled')
+        # h_choice.cb.configure(state='disabled')
+
+        # method 2
+        # works but still not ideal: caller must know order of children
+        # v_choice.winfo_children()[1].configure(state='disabled')
+        # h_choice.winfo_children()[1].configure(state='disabled')
+
+        # method 3
+        # works, but a little verbose
+        v_cb_widgets = [c for c in v_choice.winfo_children() if isinstance(c, tk.ttk.Combobox)]
+        v_cb_widgets[0].configure(state='disabled')
+        h_cb_widgets = [c for c in h_choice.winfo_children() if isinstance(c, tk.ttk.Combobox)]
+        h_cb_widgets[0].configure(state='disabled')
+
+        # method 4
+        # works uses new class variable (created after method 1 above)
+        # print(f'FramedCombo doc: {custui.FramedCombo.__doc__}')
+        # print()
+        # print(f'__init__ doc: {custui.FramedCombo.__init__.__doc__}')
+        # v_choice.cb.configure(state='disabled')
+        # h_choice.cb.configure(state='disabled')
+
     else:
         centered = False
+        # enable alignment Comboboxes
+        v_cb_widgets = [c for c in v_choice.winfo_children() if isinstance(c, tk.ttk.Combobox)]
+        v_cb_widgets[0].configure(state='readonly')
+        h_cb_widgets = [c for c in h_choice.winfo_children() if isinstance(c, tk.ttk.Combobox)]
+        h_cb_widgets[0].configure(state='readonly')
+
+        # align images as specified by the Comboboxes
+        align_images(None, viewport1, widths, heights)
 
 
 # app window
@@ -178,11 +222,12 @@ root.resizable(1, 1)
 root.title("static canvas, ttk, pack")
 
 default_dims = ""
-centered = False
 style2 = styles_ttk.CreateStyles()
 
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
 my_pady = 10
+
+centered = False
 show_layout = True
 conform_canvas_to_images = False
 
@@ -227,6 +272,7 @@ for i, n in enumerate(image_paths):
     myPhotoImages_start.append(im_tk)
     # print(f'    im_tk: ({im_tk.width()}, {im_tk.height()})')
 
+# alternative layout:
 # new_image_paths = order_by_size(widths_start, image_paths)
 new_image_paths = order_by_size(heights_start, image_paths)
 
@@ -238,6 +284,7 @@ for i, n in enumerate(new_image_paths):
     myPhotoImages.append(myPhotoImages_start[orig])
 
 canv_static1 = tk.Canvas(root, background="green")
+canv_static1.pack(padx=10, pady=10)
 
 if centered:
     arrangement = ('cc', 'cc')
@@ -254,7 +301,6 @@ for i, n in enumerate(new_image_paths):
                                      tag = tagname)
     imid_list.append(imid)
 
-canv_static1.pack(padx=10, pady=10)
 canv_static1.update()
 
 # print(f'widths: {widths}')
@@ -326,7 +372,7 @@ h_choice = custui.FramedCombo(ui_fr,
                                            hs = heights: align_images(ev, vp, ws, hs),
                             #   callb=align_images_2,
                               posn=[0,1])
-
+# print(f'v state: {v_choice.state()}')
 ui_fr.pack(side='top', ipadx=10, ipady=10, padx=5, pady=5)
 ui_fr.update()
 
@@ -335,7 +381,7 @@ canv_centered = ttk.Checkbutton(ui_fr,
                                 text='canvas centered',
                                 variable=cbvar1,
                                 name='canvas_centered',
-                                command=lambda var=cbvar1: get_checkb(var))
+                                command=lambda var=cbvar1: align_images_canv_centered(var))
 canv_centered.grid(row=3, column=0, columnspan=2)
 
 
