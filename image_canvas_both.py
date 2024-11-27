@@ -41,10 +41,10 @@ default_dims = "600x800"
 root = tk.Tk()
 root.geometry (default_dims)
 root.minsize(480, 600)
-root.resizable(1, 1)
+root.resizable(True, True)
 root.title("image, ttk, pack")
 
-style2 = styles_ttk.CreateStyles()
+style2 = styles_ttk.create_styles()
 
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
 # viewport2 = {'w': 400, 'h': 300, 'gutter': 10}

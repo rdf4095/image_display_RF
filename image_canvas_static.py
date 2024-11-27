@@ -30,6 +30,7 @@ history:
 11-25-2024  Address function parameter warnings (default None in align_images, names
             that shadow the enclosing scope, etc.) Load and use ttkthemes.
 11-26-2024  Simplify order_by_size() by using zip().
+11-27-2024  Recommit.
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
@@ -262,8 +263,8 @@ def align_images_canv_centered(var):
 
 # app window
 # root = tk.Tk()
-# root = ThemedTk(theme='radiance')    # 'for ubuntu', okay
 # root = ThemedTk(theme='elegance')    # spacing a little off with styles_ttk.py, unchecked cb looks gray
+# root = ThemedTk(theme='radiance')    # 'for ubuntu', okay
 root = ThemedTk(theme='clearlooks')    # clean, good spacing with styles_ttk.py
 
 root.resizable(True, True)
