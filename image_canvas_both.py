@@ -1,5 +1,5 @@
 """
-program: image_canvas.py
+program: image_canvas_both.py
 
 purpose: Display up to 4 images in one canvas, with constant size.
          Display 1 image in another canvas, resizable by dragging.

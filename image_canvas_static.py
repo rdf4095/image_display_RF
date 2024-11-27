@@ -27,6 +27,9 @@ history:
 10-22-2024  Update module header, remove old commented code.
 10-24-2024  Add button to center images in the whole canvas.
 10-26-2024  Add functionality for the centering button.
+11-25-2024  Address function parameter warnings (default None in align_images, names
+            that shadow the enclosing scope, etc.) Load and use ttkthemes.
+11-26-2024  Simplify order_by_size() by using zip().
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
@@ -41,6 +44,7 @@ import tkinter as tk
 from tkinter import ttk
 from importlib.machinery import SourceFileLoader
 
+from ttkthemes import ThemedTk
 from PIL import Image, ImageTk
 
 import canvas_ui as cnv
@@ -49,32 +53,36 @@ styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_modu
 custui = SourceFileLoader("custui", "../pandas_data_RF/rf_custom_ui.py").load_module()
 
 def set_all_posn(canvas: object,
-                 positions: list,
+                 img_positions: list,
                  wd: list) -> None:
-    """Set position for all images in a canvas."""    
-    canvas.moveto(1, positions[0].x, positions[0].y)
+    """Set position for up to four images in a canvas."""
+    canvas.moveto(1, img_positions[0].x, img_positions[0].y)
 
     if len(wd) >= 2:
-        canvas.moveto(2, positions[1].x, positions[1].y)
+        canvas.moveto(2, img_positions[1].x, img_positions[1].y)
 
     if len(wd) >= 3:
-        canvas.moveto(3, positions[2].x, positions[2].y)
+        canvas.moveto(3, img_positions[2].x, img_positions[2].y)
 
     if len(wd) == 4:
-        canvas.moveto(4, positions[3].x, positions[3].y)
+        canvas.moveto(4, img_positions[3].x, img_positions[3].y)
 
 
-def order_by_size(dims: list, paths: list) -> list:
+def sort_image_sizes(dims: list):
+    pass
+
+
+def order_by_size_ORIG(dims: list, paths: list) -> list:
     """Find the 2 images of greatest dimension.
     
-    dims specifies the dimension, as image widths or heights.
-    This function should only be called if len(dims) > 2.
-    For 1 or 2 images, there's limited choice of display arrangement.
+    argument dims specifies the dimension, as image widths or heights.
+    This function should only be called if len(dims) > 2. For 1 or 2
+    images, the function does not manage display arrangement.
     """
     num_items = len(dims)
     sort_w = sorted(dims)
     largest_2 = sort_w[num_items - 2:]
-    newpaths = []
+    # newpaths = []
     
     w1 = dims.index(largest_2[0])
 
@@ -98,6 +106,37 @@ def order_by_size(dims: list, paths: list) -> list:
     return newpaths
 
 
+def order_by_size(dims: list, paths: list) -> list:
+    """Find the 2 images of greatest dimension.
+
+    argument dims specifies the dimension, as image widths or heights.
+    This function should only be called if len(dims) > 2. For 1 or 2
+    images, the function does not manage display arrangement.
+    """
+    num_items = len(dims)
+
+    sizes_paths = zip(dims, paths)
+    sizes_paths_tuple = tuple(sizes_paths)
+    s_p_t_sorted = sorted(sizes_paths_tuple)
+    # print(f'size-path tuples, sorted: {s_p_t_sorted}')
+
+    """
+    tallest-----x                  widest-----x
+       |         |           OR:     |        |
+       x----next_tallest             x----next_widest
+    """
+    if num_items == 4:
+        newpaths = [s_p_t_sorted[3][1], s_p_t_sorted[0][1], s_p_t_sorted[1][1], s_p_t_sorted[2][1]]
+    else:
+        if num_items == 3:
+            newpaths = [s_p_t_sorted[2][1], s_p_t_sorted[1][1], s_p_t_sorted[0][1]]
+        else:
+            newpaths = [s_p_t_sorted[1][1], s_p_t_sorted[0][1]]
+
+    # print(f'old: newpaths: {newpaths}')
+    return newpaths
+
+
 """
 Callback function executed when a Combobox item is selected
 in class FramedCombobox. See the FramedCombo instance below.
@@ -106,25 +145,29 @@ in class FramedCombobox. See the FramedCombo instance below.
 # --------
 def align_images(ev: tk.Event,
                  vp: dict,
-                 widths: list,
-                 heights: list) -> None:
+                 img_widths: list,
+                 img_heights: list) -> None:
     """Set user-selected image alignment."""
     # print('in align_images')
     h = horizontal_align.get()
     v = vertical_align.get()
 
-    positions = cnv.get_positions(vp, widths, heights, (h, v))
-    set_all_posn(canv_static1, positions, widths)
+    img_positions = cnv.get_positions(vp, img_widths, img_heights, (h, v))
+    set_all_posn(canv_static1, img_positions, img_widths)
+
 
 # method 2
+# simpler calling syntax; probably won't use this because it assumes
+# variable names in the module, instead of accepting them as arguments.
 # --------
 def align_images_2(ev: tk.Event) -> None:
     """Set user-selected image alignment."""
     h = horizontal_align.get()
     v = vertical_align.get()
 
-    positions = cnv.get_positions(viewport1, widths, heights, (h, v))
-    set_all_posn(canv_static1, positions, widths, (h, v))
+    img_positions = cnv.get_positions(viewport1, widths, heights, (h, v))
+    # set_all_posn(canv_static1, positions, widths, (h, v))
+    set_all_posn(canv_static1, img_positions, widths)
 
 
 def show_vp_borders(canv: object, vp: dict) -> None:
@@ -169,12 +212,11 @@ def show_vp_borders(canv: object, vp: dict) -> None:
 def align_images_canv_centered(var):
     # print('in align_images_canv_centered')
     v = var.get()
-    # print("\t", v)
-    if v is 1:
-        centered = True    # not used...
+    if v == 1:
+        # centered = True
         # apply centering relative to the canvas as a whole
-        positions = cnv.get_positions(viewport1, widths, heights, ('cc', 'cc'))
-        set_all_posn(canv_static1, positions, widths)
+        img_positions = cnv.get_positions(viewport1, widths, heights, ('cc', 'cc'))
+        set_all_posn(canv_static1, img_positions, widths)
 
         # disable alignment Comboboxes
 
@@ -190,14 +232,15 @@ def align_images_canv_centered(var):
         # h_choice.winfo_children()[1].configure(state='disabled')
 
         # method 3
-        # works, but a little verbose
+        # works, but a little verbose; could be a function if there is a
+        # need to find a particular type of child widget.
         v_cb_widgets = [c for c in v_choice.winfo_children() if isinstance(c, tk.ttk.Combobox)]
         v_cb_widgets[0].configure(state='disabled')
         h_cb_widgets = [c for c in h_choice.winfo_children() if isinstance(c, tk.ttk.Combobox)]
         h_cb_widgets[0].configure(state='disabled')
 
         # method 4
-        # works uses new class variable (created after method 1 above)
+        # works, by using new class variable (created after method 1 above)
         # print(f'FramedCombo doc: {custui.FramedCombo.__doc__}')
         # print()
         # print(f'__init__ doc: {custui.FramedCombo.__init__.__doc__}')
@@ -205,7 +248,7 @@ def align_images_canv_centered(var):
         # h_choice.cb.configure(state='disabled')
 
     else:
-        centered = False
+        # centered = False
         # enable alignment Comboboxes
         v_cb_widgets = [c for c in v_choice.winfo_children() if isinstance(c, tk.ttk.Combobox)]
         v_cb_widgets[0].configure(state='readonly')
@@ -213,16 +256,21 @@ def align_images_canv_centered(var):
         h_cb_widgets[0].configure(state='readonly')
 
         # align images as specified by the Comboboxes
-        align_images(None, viewport1, widths, heights)
+        noev = tk.Event()    # TODO: is this necessary?
+        align_images(noev, viewport1, widths, heights)
 
 
 # app window
-root = tk.Tk()
-root.resizable(1, 1)
+# root = tk.Tk()
+# root = ThemedTk(theme='radiance')    # 'for ubuntu', okay
+# root = ThemedTk(theme='elegance')    # spacing a little off with styles_ttk.py, unchecked cb looks gray
+root = ThemedTk(theme='clearlooks')    # clean, good spacing with styles_ttk.py
+
+root.resizable(True, True)
 root.title("static canvas, ttk, pack")
 
 default_dims = ""
-style2 = styles_ttk.CreateStyles()
+style2 = styles_ttk.create_styles()
 
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
 my_pady = 10
@@ -272,9 +320,9 @@ for i, n in enumerate(image_paths):
     myPhotoImages_start.append(im_tk)
     # print(f'    im_tk: ({im_tk.width()}, {im_tk.height()})')
 
-# alternative layout:
-# new_image_paths = order_by_size(widths_start, image_paths)
-new_image_paths = order_by_size(heights_start, image_paths)
+# alternative layouts:
+new_image_paths = order_by_size(widths_start, image_paths)
+# new_image_paths = order_by_size(heights_start, image_paths)
 
 for i, n in enumerate(new_image_paths):
     orig = image_paths.index(n)
@@ -296,7 +344,7 @@ positions = cnv.get_positions(viewport1, widths, heights, arrangement)
 imid_list = []
 for i, n in enumerate(new_image_paths):
     tagname = "tag_im" + str(i)
-    print(f'position {i}: {positions[i].x}, {positions[i].y}')
+    # print(f'position {i}: {positions[i].x}, {positions[i].y}')
     imid = canv_static1.create_image(positions[i].x, positions[i].y, anchor=tk.NW, image=myPhotoImages[i],
                                      tag = tagname)
     imid_list.append(imid)
@@ -357,10 +405,11 @@ v_choice = custui.FramedCombo(ui_fr,
                               var=vertical_align,
                               callb=lambda ev, 
                                            vp=viewport1,
-                                           ws = widths,
-                                           hs = heights: align_images(ev, vp, ws, hs),
+                                           ws=widths,
+                                           hs=heights: align_images(ev, vp, ws, hs),
                             #   callb=align_images_2,
                               posn=[0,0])
+# noinspection PyDefaultArgument
 h_choice = custui.FramedCombo(ui_fr,
                               cb_values=horizontals,
                               display_name='horizontal',
@@ -368,8 +417,8 @@ h_choice = custui.FramedCombo(ui_fr,
                               var=horizontal_align,
                               callb=lambda ev,
                                            vp=viewport1,
-                                           ws = widths,
-                                           hs = heights: align_images(ev, vp, ws, hs),
+                                           ws=widths,
+                                           hs=heights: align_images(ev, vp, ws, hs),
                             #   callb=align_images_2,
                               posn=[0,1])
 # print(f'v state: {v_choice.state()}')
@@ -400,8 +449,8 @@ btnq.grid(row=4, column=0, columnspan=2)
 total_ht = lab.winfo_height() + canv_static1.winfo_height() + ui_fr.winfo_height()
 total_wd = max(lab.winfo_width(), canv_static1.winfo_width(), ui_fr.winfo_width())
 default_dims = f'{total_wd}x{total_ht}'
-print(f'default_dims: {default_dims}')
-print(f'    {lab.winfo_height()}, {canv_static1.winfo_height()}, {ui_fr.winfo_height()}')
+# print(f'default_dims: {default_dims}')
+# print(f'    {lab.winfo_height()}, {canv_static1.winfo_height()}, {ui_fr.winfo_height()}')
 
 # optional: report function signatures.
 # import inspect
