@@ -12,6 +12,7 @@ history:
 -------
 03-04-2024  creation
 10-13-2024  Debug the new approach to sizing static images.
+11-27-2024  Use ThemedTk for widgets.
 """
 """
 TODO: - add frame below the canvas, for other widgets, so the
@@ -25,11 +26,12 @@ import tkinter as tk
 from tkinter import ttk
 from importlib.machinery import SourceFileLoader
 
+from ttkthemes import ThemedTk
 from PIL import Image, ImageTk
 
 import canvas_ui as cnv
 
-styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
+sttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
 
 def reset_window_size(dims: str) -> None:
     root.geometry(dims)
@@ -38,16 +40,15 @@ def reset_window_size(dims: str) -> None:
 # app window
 default_dims = "600x800"
 
-root = tk.Tk()
+root = ThemedTk()
 root.geometry (default_dims)
 root.minsize(480, 600)
 root.resizable(True, True)
-root.title("image, ttk, pack")
+root.title("static and dynamic canvases, ttk, pack")
 
-style2 = styles_ttk.create_styles()
+style2 = sttk.create_styles()
 
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
-# viewport2 = {'w': 400, 'h': 300, 'gutter': 10}
 my_pady = 10
 
 canvas_reconfig = {'w': viewport1['w'] * 2 + viewport1['gutter'],
@@ -130,13 +131,13 @@ but_reset_size = ttk.Button(root,
                             text="reset window size",
                             command=lambda dims=default_dims: reset_window_size(dims),
                             style="MyButton1.TButton")
-but_reset_size.pack(side='top', padx=5, pady=10)
+but_reset_size.pack(pady=10)
 
 btnq = ttk.Button(root,
                   text="Quit",
                   command=root.quit,
                   style="MyButton1.TButton")
-btnq.pack(side="top", fill='x', padx=10)
+btnq.pack(pady=10)
 
 if __name__ == "__main__":
     root.mainloop()

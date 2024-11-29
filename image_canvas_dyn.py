@@ -19,6 +19,7 @@ history:
             Reorganize code, using image_canvas_static.py as a model.
 10-22-2024  Minor whitespace and other order-of-steps changes for consistency
             with image_canvas_static.py.
+11-27-2024  Remove unused function(s) and paramter(s). Use ThemedTk for widgets.
 """
 """
 TODO: - 
@@ -27,11 +28,12 @@ import tkinter as tk
 from tkinter import ttk
 from importlib.machinery import SourceFileLoader
 
+from ttkthemes import ThemedTk
 from PIL import Image
 
 import canvas_ui as cnv
 
-styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
+sttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
 
 def reset_window_size(dims: str) -> None:
     print(f'geometry: {root.geometry()}')
@@ -39,21 +41,13 @@ def reset_window_size(dims: str) -> None:
     print(f'geometry: {root.geometry()}')
 
 
-# ?? doesn't work
-def resize_root(ev: tk.Event,
-                  im: object,
-                  canv: object) -> None:
-    params1 = cnv.calc_resize(ev, im)
-    print(f'params1: {params1}')
-
-
 # app window
-root = tk.Tk()
-root.resizable(1, 1)
+root = ThemedTk()
+root.resizable(True, True)
 root.title("dynamic canvas, ttk, pack")
 
 default_dims = ""
-style2 = styles_ttk.CreateStyles()
+style2 = sttk.create_styles()
 
 viewport = {'w': 400, 'h': 300, 'gutter': 10}
 my_pady = 10

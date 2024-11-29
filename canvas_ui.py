@@ -8,7 +8,7 @@ comments: To display images at their native size(s) when img dimensions
           routine should be written, to replace compare_ratios, OR:
           init_image_size wouldn't be needed in the calling
           module, and native sizes would be used directly. That approach is not
-          transparent to the caller however.
+          transparent to the caller.
           Note: this hasn't been tested.
 
 author: Russell Folks
@@ -31,6 +31,8 @@ history:
 10-23-2024  Add function set_canv_centered, to move all images toward the
             center of the canvas, allowing for the viewport gutter.
 10-26-2024  Update set_canv_centered() to handle less than 4 images.
+11-27-2024  Correct type-hinting for some functions.
+11-28-2024  Adjust whitespace, remove commented-out code.
 """
 """
 TODO: - Should get_posn() be modified to prevent images from overflowing 
@@ -43,14 +45,15 @@ import tkinter as tk
 # -------
 # utility
 # -------
-def compare_ratios(vp: dict,
-                   im: object,
+def compare_ratios(vp: float,
+                   im: float,
                    w: int,
                    h: int) -> dict:
     """Set new image height and/or width based on viewport shape.
 
     Images will be scaled up or down to match viewport height or width.
     """
+    print(f'{type(vp)}, {type(im)}, {type(w)}, {type(h)}')
     if vp > im:
         ht_new = h
         wid_new = int(ht_new * im)
@@ -62,13 +65,13 @@ def compare_ratios(vp: dict,
 
 
 # -------------
-# static canvas: canvas and conatained objects are fixed size
+# static canvas: canvas and contained objects are fixed size
 # -------------
-def Posn_init(self, x: int, y: int): 
+def posn_init(self, x: int, y: int):
     self.x = x
     self.y = y
 
-Posn = type('Posn', (), {"__init__": Posn_init})
+Posn = type('Posn', (), {"__init__": posn_init})
 
 
 def get_positions(vp: dict,
@@ -106,8 +109,8 @@ def get_1_posn(vp: dict,
                wd: list,
                ht: list,
                arrange: tuple,
-               shiftR: bool = False,
-               shiftD: bool = False) -> Posn:
+               shift_right: bool = False,
+               shift_down: bool = False) -> Posn:
     """Assign location for one image in a Canvas."""
     imp = Posn(0, 0)
 
@@ -127,9 +130,11 @@ def get_1_posn(vp: dict,
         case 'right':
             imp.x = vp['w'] - wd
 
-    if shiftR is True:
+    # if shift_right is True:
+    if shift_right:
         imp.x += (vp['w'] + vp['gutter'])
-    if shiftD is True:
+    # if shift_down is True:
+    if shift_down:
         imp.y += (vp['h'] + vp['gutter'])
 
     return imp
@@ -185,17 +190,18 @@ def resize_images(ev: tk.Event,
                   im: object,
                   canv: object) -> None:
     """Create image object for display at a calculated size."""
-    global im_tk_new1 
+    global im_tk_new1
 
     params1 = calc_resize(ev, im)
-    print(f'params1: {params1}')
-    print(f"params1.im_resize_new w,h: {params1['im_resize_new'].width}, {params1['im_resize_new'].height}")
-    print(f"params1.im_resize_new size: {params1['im_resize_new'].size}")
+    # print(f'params1: {params1}')
+    # print(f"params1.im_resize_new w,h: {params1['im_resize_new'].width}, {params1['im_resize_new'].height}")
+    # print(f"params1.im_resize_new size: {params1['im_resize_new'].size}")
 
     im_tk_new1 = ImageTk.PhotoImage(params1['im_resize_new'])
     canv.create_image(0, 0,
                       anchor=tk.NW,
                       image=im_tk_new1)
+
 
 def calc_resize_to_vp(vp: dict, im: object) -> dict:
     canv_width = vp['w']
@@ -212,7 +218,6 @@ def calc_resize_to_vp(vp: dict, im: object) -> dict:
               'ht_int': int(canv_height)}
     
     return params
-
 
 
 def calc_resize(ev: tk.Event, im: object) -> dict:

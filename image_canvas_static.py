@@ -31,6 +31,8 @@ history:
             that shadow the enclosing scope, etc.) Load and use ttkthemes.
 11-26-2024  Simplify order_by_size() by using zip().
 11-27-2024  Recommit.
+11-28-2024  Update README file. Rename styles_ttk to sttk to conform with other
+            projects.
 """
 """
 TODO: - Consider another arrangement option: group around canvas center.
@@ -38,7 +40,7 @@ TODO: - Consider another arrangement option: group around canvas center.
       - Future: for conform_canvas_to_images(), handle images displayed 
         side-by-side (shrink to viewport height) vs 1st-above-2nd
         (shrink to viewport width.) This isn't needed if we're using
-        order_by_size().
+        order_by_size() ?.
 """
 
 import tkinter as tk
@@ -50,7 +52,7 @@ from PIL import Image, ImageTk
 
 import canvas_ui as cnv
 
-styles_ttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
+sttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
 custui = SourceFileLoader("custui", "../pandas_data_RF/rf_custom_ui.py").load_module()
 
 def set_all_posn(canvas: object,
@@ -262,16 +264,14 @@ def align_images_canv_centered(var):
 
 
 # app window
-# root = tk.Tk()
 # root = ThemedTk(theme='elegance')    # spacing a little off with styles_ttk.py, unchecked cb looks gray
 # root = ThemedTk(theme='radiance')    # 'for ubuntu', okay
-root = ThemedTk(theme='clearlooks')    # clean, good spacing with styles_ttk.py
-
+root = ThemedTk()    # clean, good spacing with styles_ttk.py
 root.resizable(True, True)
 root.title("static canvas, ttk, pack")
 
 default_dims = ""
-style2 = styles_ttk.create_styles()
+style2 = sttk.create_styles()
 
 viewport1 = {'w': 200, 'h': 150, 'gutter': 10}
 my_pady = 10
