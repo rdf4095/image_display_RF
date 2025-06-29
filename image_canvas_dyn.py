@@ -31,14 +31,15 @@ from importlib.machinery import SourceFileLoader
 from ttkthemes import ThemedTk
 from PIL import Image
 
-import canvas_ui as cnv
+# import canvas_ui as cnv
 
 sttk = SourceFileLoader("styles_ttk", "../styles/styles_ttk.py").load_module()
+cnv_ui = SourceFileLoader("cnv", "../canvas/canvas_ui.py").load_module()
 
 def reset_window_size(dims: str) -> None:
-    print(f'geometry: {root.geometry()}')
+    # print(f'geometry: {root.geometry()}')
     root.geometry(dims)
-    print(f'geometry: {root.geometry()}')
+    # print(f'geometry: {root.geometry()}')
 
 
 # app window
@@ -58,7 +59,7 @@ lab.pack(pady=my_pady)
 
 image_path = "images/parapsycho_1.png"
 im1 = Image.open(image_path)
-imsize = cnv.init_image_size(im1, viewport)
+imsize = cnv_ui.init_image_size(im1, viewport)
 
 canv_dyn1 = tk.Canvas(root,
                       width=viewport['w'],
@@ -67,34 +68,12 @@ canv_dyn1 = tk.Canvas(root,
                       background='green')
 canv_dyn1.pack(fill='both', expand=True)
 
-params = cnv.calc_resize_to_vp(viewport, im1)
+params = cnv_ui.calc_resize_to_vp(viewport, im1)
 print(params)
 
 canv_dyn1.configure(width=viewport['w'], height=viewport['h'])
-canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv.resize_images(ev, im, canv))
+canv_dyn1.bind('<Configure>', lambda ev, im=im1, canv=canv_dyn1: cnv_ui.resize_images(ev, im, canv))
 canv_dyn1.addtag_all("all")
-
-# Scale the canvas to hold images with no extra space.
-# This is to handle future situations like:
-#   1) all imgs smaller than the viewport width, with no re-scaling
-#   2) all imgs smaller than the viewport height, with no re-scaling
-#   3) after re-scaling, all img widths or heights smaller than corresponding
-#      canvas dimension.
-# In all 3 cases, remove "extra" canvas width or height. The purpose is to allow
-# other objects to be positioned closer to the canvas.
-
-# canvas_config_ht = max(sum(heights[0::2]), sum(heights[1::2])) + viewport['gutter']
-# print(f'final gutter: {viewport1["gutter"]}')
-# canvas_reconfig['h'] = max(sum(heights[0::2]) + viewport1['gutter'],
-#                            sum(heights[1::2]) + viewport1['gutter'])
-# print(f'canvas_reconfig h: {canvas_reconfig["h"]}')
-# canvas_reconfig['h'] += (viewport1['gutter'])
-# print(f'canvas_reconfig h: {canvas_reconfig["h"]}')
-
-# print()
-# print(f"static canv reconfig w,h: {canvas_reconfig['w']}, {canvas_reconfig['h']}")
-
-# canv_static1.configure(width=canvas_reconfig['w'], height=canvas_reconfig['h'])
 
 # UI elements ----------
 ui_fr = ttk.Frame(root, relief='groove')
@@ -111,7 +90,7 @@ btnq = ttk.Button(root,
                   text="Quit",
                   command=root.quit,
                   style="MyButton1.TButton")
-btnq.pack(side="top", fill='x', padx=10)
+btnq.pack(side="top")#, fill='x', padx=10)
 
 # show some layout dimensions
 # ----
